@@ -1,0 +1,36 @@
+name: Bug report
+description: Something does not work as documented.
+labels: ["type: bug", "status: needs-triage"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem. Screenshots or recordings help a lot for visual bugs.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open /u/<username>
+        2. Zoom to 3x
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, OS, and device
+      placeholder: Firefox 131, Windows 11, laptop
+  - type: input
+    id: username
+    attributes:
+      label: GitHub username of the city (if relevant)

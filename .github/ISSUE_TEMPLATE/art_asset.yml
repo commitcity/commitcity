@@ -1,0 +1,43 @@
+name: Art asset
+description: Propose or request a building, tile, tree, or prop.
+labels: ["type: art", "area: art", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        All art must follow the [Art Direction](https://github.com/commitcity/commitcity/blob/main/docs/ART_DIRECTION.md). Never use TheoTown or any other game's assets as a source.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Asset kind
+      options: [Building, Ground tile, Road set, Vegetation, Prop]
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What it looks like and what it represents (for example "small brick office, level 2").
+    validations:
+      required: true
+  - type: dropdown
+    id: family
+    attributes:
+      label: Building family (buildings only)
+      options: [residential, brick, modern, industrial, civic, not applicable]
+  - type: dropdown
+    id: footprint
+    attributes:
+      label: Footprint (buildings only)
+      options: ["1x1", "2x2", "3x3", "4x4", "not applicable"]
+  - type: textarea
+    id: references
+    attributes:
+      label: Mood references
+      description: Links or sketches for mood only. Reference images are never copied or traced.
+  - type: dropdown
+    id: ai
+    attributes:
+      label: Will you use AI assistance?
+      description: Allowed with disclosure; see Art Direction §14.
+      options: ["No", "Yes", "Not sure yet"]

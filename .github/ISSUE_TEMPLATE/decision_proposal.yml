@@ -1,0 +1,29 @@
+name: Decision proposal
+description: Propose a significant technical or product decision (may become an ADR).
+labels: ["type: decision", "status: needs-discussion"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What problem needs a decision, and what constraints apply?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed decision
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: For each alternative, why it was not chosen.
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences
+      description: What gets easier, what gets harder, which documents must change.

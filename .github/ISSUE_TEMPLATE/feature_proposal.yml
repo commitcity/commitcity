@@ -1,0 +1,37 @@
+name: Feature proposal
+description: Suggest a new capability for CommitCity.
+labels: ["type: feature", "status: needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read the [Vision](https://github.com/commitcity/commitcity/blob/main/docs/VISION.md) first, especially its non-goals, and the [Roadmap](https://github.com/commitcity/commitcity/blob/main/docs/ROADMAP.md).
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What would this improve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the feature from the user's point of view.
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Where does it fit?
+      options:
+        - Current phase
+        - A later phase in the roadmap
+        - A later feature track
+        - Not in the roadmap yet
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and trade-offs

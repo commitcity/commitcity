@@ -4,7 +4,7 @@ Thank you for your interest in CommitCity! This project is built by developers, 
 
 This guide explains **how the project is organized**, **how to contribute**, and **how decisions are made**.
 
-> **Project status:** Phase 0 — Specification. There is no application code yet. The most useful contributions right now are reviewing the documents in [`docs/`](./docs) and opening issues for anything unclear. See [`docs/ROADMAP.md`](./docs/ROADMAP.md).
+> **Project status:** early development. Only the application skeleton exists so far; see [Development setup](#12-development-setup) to run it. Reviewing the documents in [`docs/`](./docs) and opening issues for anything unclear is still very helpful. See [`docs/ROADMAP.md`](./docs/ROADMAP.md).
 
 ---
 
@@ -265,7 +265,42 @@ This adds a line like `Signed-off-by: Your Name <you@example.com>`. A CI check r
 
 ## 12. Development setup
 
-There is no application code yet. This section will be filled in by Milestone 1.0 (project skeleton) and will cover installation, running the app, running tests, and validating assets.
+### Requirements
+
+- **Node.js 22** or newer (the exact major version is in [`.nvmrc`](./.nvmrc))
+- **pnpm 10**: run `corepack enable` once and Node will use the version pinned in `package.json`
+
+### First run
+
+```bash
+git clone https://github.com/<your-username>/commitcity.git
+cd commitcity
+pnpm install
+pnpm dev
+```
+
+Open http://localhost:3000.
+
+### Commands
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Starts the development server |
+| `pnpm build` | Builds the production app |
+| `pnpm lint` | Runs ESLint, including the `src/core` purity rules |
+| `pnpm typecheck` | Runs the TypeScript compiler without emitting files |
+| `pnpm test` | Runs the unit tests once (`pnpm test:watch` to keep them running) |
+| `pnpm format` | Formats code with Prettier (`pnpm format:check` only checks) |
+
+CI runs `format:check`, `lint`, `typecheck`, `test`, and `build` on every pull request. Run them locally before pushing.
+
+### Layer rules enforced by lint
+
+Code in `src/core` must stay pure ([ADR 0001](./docs/decisions/0001-separate-generation-from-rendering.md)). ESLint rejects, inside `src/core`:
+
+- imports of React, Next.js, or PixiJS;
+- imports from higher layers (`src/renderer`, `src/ui`, `src/app`, `src/data`);
+- `Math.random` and `Date.now`.
 
 ---
 

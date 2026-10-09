@@ -1,7 +1,7 @@
 import type { Texture } from "pixi.js";
 import type { AssetCatalog, Family } from "@/core/assets";
-import { type TileSize, parseBuildingKey } from "@/core/view";
-import { Pixels, type Rgb, TextureCache, diamondTop } from "../pixels";
+import { type HitMask, type TileSize, parseBuildingKey } from "@/core/view";
+import { Pixels, type Rgb, diamondTop, outlineOf } from "../pixels";
 
 // Code-drawn placeholders for a generated city (ART_DIRECTION.md §13): 2:1 edges,
 // light from the upper left (roof lightest, left wall medium, right wall darkest),
@@ -61,8 +61,14 @@ const ASPHALT: Rgb = [84, 86, 96];
 const CURB: Rgb = [172, 172, 164];
 const LANE: Rgb = [226, 200, 96];
 
+interface Entry {
+  texture: Texture;
+  mask: HitMask;
+}
+
 export class CityPlaceholders {
-  private readonly cache = new TextureCache();
+  private readonly entries = new Map<string, Entry>();
+  private readonly outlines = new Map<string, Texture>();
   private readonly families = new Map<string, { family: Family; footprint: number }>();
 
   constructor(
@@ -74,18 +80,47 @@ export class CityPlaceholders {
   }
 
   texture(textureKey: string): Texture {
-    return this.cache.get(textureKey, () => this.draw(textureKey));
+    return this.entry(textureKey).texture;
+  }
+
+  /** Opaque pixels of the texture, for hit testing. */
+  mask(textureKey: string): HitMask {
+    return this.entry(textureKey).mask;
+  }
+
+  /** A 1 px outline of the texture's shape, drawn one pixel up and left of it. */
+  outline(textureKey: string, color: Rgb): Texture {
+    const key = `${textureKey}|${color.join(",")}`;
+    let texture = this.outlines.get(key);
+    if (!texture) {
+      texture = outlineOf(this.mask(textureKey), color).toTexture();
+      this.outlines.set(key, texture);
+    }
+    return texture;
   }
 
   destroy() {
-    this.cache.clear();
+    for (const { texture } of this.entries.values()) texture.destroy(true);
+    for (const texture of this.outlines.values()) texture.destroy(true);
+    this.entries.clear();
+    this.outlines.clear();
+  }
+
+  private entry(textureKey: string): Entry {
+    let entry = this.entries.get(textureKey);
+    if (!entry) {
+      const pixels = this.draw(textureKey);
+      entry = { texture: pixels.toTexture(), mask: pixels.mask() };
+      this.entries.set(textureKey, entry);
+    }
+    return entry;
   }
 
   private get unit(): number {
     return this.tile.width / 32;
   }
 
-  private draw(key: string): Texture {
+  private draw(key: string): Pixels {
     const [kind, a, b] = key.split("/");
     if (kind === "ground") return this.ground(a ?? "grass", Number(b));
     if (kind === "road") return this.road(Number(a));
@@ -109,7 +144,7 @@ export class CityPlaceholders {
     });
   }
 
-  private building(family: Family, footprint: number, level: number, abandoned: boolean): Texture {
+  private building(family: Family, footprint: number, level: number, abandoned: boolean): Pixels {
     let scheme = FAMILY_SCHEMES[family];
     if (abandoned) {
       const fade = (c: Rgb): Rgb => [
@@ -129,7 +164,7 @@ export class CityPlaceholders {
   }
 
   /** A 2:1 box with a roof, two shaded walls, and rows of windows per storey. */
-  private box(footprint: number, heightPx: number, scheme: Scheme): Texture {
+  private box(footprint: number, heightPx: number, scheme: Scheme): Pixels {
     const u = this.unit;
     const width = footprint * this.tile.width;
     const depth = footprint * this.tile.height;
@@ -156,10 +191,10 @@ export class CityPlaceholders {
         pixels.set(x, bottom + row, window ? scheme.window : wall);
       }
     }
-    return pixels.toTexture();
+    return pixels;
   }
 
-  private ground(kind: string, variant: number): Texture {
+  private ground(kind: string, variant: number): Pixels {
     const base = GROUND[kind] ?? GROUND.grass!;
     const shift = (variant % 4) * 3 - 4;
     const fill: Rgb = [base[0] + shift, base[1] + shift, base[2] + shift];
@@ -175,14 +210,14 @@ export class CityPlaceholders {
         pixels.set(x, y, y === bottom - 1 ? edge : speckled ? speck : fill);
       }
     }
-    return pixels.toTexture();
+    return pixels;
   }
 
   /**
    * Asphalt with a curb on every side that has no road neighbor and a dashed lane
    * line toward every side that has one. Mask bits: 1 = +x, 2 = +y, 4 = -x, 8 = -y.
    */
-  private road(mask: number): Texture {
+  private road(mask: number): Pixels {
     const { width, height } = this.tile;
     const u = this.unit;
     const pixels = new Pixels(width, height);
@@ -216,11 +251,11 @@ export class CityPlaceholders {
         pixels.set(x, y, LANE);
       }
     }
-    return pixels.toTexture();
+    return pixels;
   }
 
   /** Small props on one tile, anchored like buildings: bottom-center at the front vertex. */
-  private decoration(kind: string, variant: number): Texture {
+  private decoration(kind: string, variant: number): Pixels {
     const u = this.unit;
     const { width, height } = this.tile;
     const extra = 22 * u;
@@ -282,6 +317,6 @@ export class CityPlaceholders {
       default:
         disc(cx, groundY - 2 * u, 2 * u, [200, 0, 200], [255, 0, 255]);
     }
-    return pixels.toTexture();
+    return pixels;
   }
 }

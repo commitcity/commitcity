@@ -9,6 +9,8 @@ export interface CityParams {
   fixture: FixtureName;
   orientation: Orientation;
   zoom: number | null;
+  /** Name of the selected repository. */
+  repo: string | null;
 }
 
 /** Reads the initial settings from the query string, so screenshots are reproducible. */
@@ -24,5 +26,14 @@ export function parseCityParams(query: Record<string, string | string[] | undefi
     fixture: FIXTURES.includes(fixture as FixtureName) ? (fixture as FixtureName) : "medium",
     orientation: (ORIENTATIONS.includes(o as Orientation) ? o : 0) as Orientation,
     zoom: Number.isInteger(zoom) && zoom > 0 ? zoom : null,
+    repo: get("repo") || null,
   };
+}
+
+/** The query string for the current view, so the URL can be shared. */
+export function cityQuery(params: Omit<CityParams, "zoom">): string {
+  const query = new URLSearchParams({ fixture: params.fixture });
+  if (params.orientation !== 0) query.set("o", String(params.orientation));
+  if (params.repo) query.set("repo", params.repo);
+  return query.toString();
 }

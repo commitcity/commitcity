@@ -29,7 +29,7 @@ Each decision is marked as **Confirmed**, **Proposal** (to be validated, usually
 | **PixiJS v8** | Keep | Mature WebGL/WebGPU 2D sprite renderer with batching, texture atlases, and nearest-neighbor scaling. Fits a sprite-based isometric city. | Confirmed — Milestone 1.1 (phone measurement pending, #10) |
 | **@pixi/react** | Defer | Declaring thousands of sprites as React elements adds reconciliation overhead and makes sorting and culling harder to control. Proposal: PixiJS used imperatively inside one client component; React is used for UI only. Can be revisited. | Proposal |
 | **Tailwind CSS** | Keep (UI only) | Fast, consistent styling for panels and pages. Never used inside the canvas. | Confirmed |
-| **Zustand** | Keep (small) | Lightweight store for UI state (selection, panels, orientation). Not used for city data or per-frame camera updates. | Confirmed |
+| **Zustand** | Keep (small), when needed | Lightweight store for UI state (selection, panels, orientation). Not used for city data or per-frame camera updates. Not added yet: milestone 3.2 needed only one component's state (§8). | Deferred |
 | **Vitest** | Keep | Fast unit tests; generation is pure, so it is highly testable. | Confirmed |
 | **PostgreSQL** | Defer | No requirement yet. Public pages can be served from cached API results. It may become necessary for timelapse history or rate-limit protection. | Confirmed (deferred) |
 | **GitHub API** | Later phase | Fixtures first; the API adapter comes after rendering and generation are proven. GraphQL preferred (see §10). | Confirmed |
@@ -365,9 +365,12 @@ The front-corner sum alone, the original proposal, is **not** enough: a small ob
 
 ### 7.4 Interaction
 
-- **Pan:** pointer drag, touch drag, keyboard arrows.
-- **Zoom:** wheel, pinch, keyboard; anchored at the pointer.
-- **Hit testing:** screen point → candidate objects whose bounding box contains it, checked from front to back → alpha test against the sprite's pixel. **Proposal.**
+- **Pan:** pointer drag, touch drag, keyboard arrows. The camera is clamped so the canvas center always stays over the ground; the clamp works in view tile space, where the ground is a rectangle.
+- **Zoom:** wheel, pinch, keyboard; anchored at the pointer. Wheel deltas are accumulated so a trackpad zooms one integer step at a time like a mouse wheel.
+- **Tap vs. drag:** a press that moves less than 6 CSS px is a tap; anything longer pans. A second finger turns the gesture into a pinch.
+- **Hit testing:** screen point → candidate objects whose bounding box contains it, checked from front to back → alpha test against the sprite's pixel. Decorations are not pickable, so a click on a tree reaches the building behind it. `pickAt` and `spriteOrigin` live in `src/core/view/hitTest.ts`, so the renderer and the tests share the exact sprite placement. **Confirmed** (milestone 3.2): a test paints every building of the medium and edge-case cities in all four orientations and checks that every painted pixel picks its owner.
+- **Highlight:** hover and selection are 1 px outlines generated from the sprite's alpha, drawn in `overlayLayer`, so a selected building stays visible even when another one stands in front of it.
+- **Keyboard:** arrows pan, `+`/`-` zoom, `q`/`e` rotate, `n`/`p` select the next or previous building, `Escape` clears the selection.
 - **Culling:** only objects intersecting the viewport (plus margin) are visible.
 
 ## 8. State management
@@ -378,7 +381,7 @@ The front-corner sum alone, the original proposal, is **not** enough: a small ob
 | `CityModel` | Memoized result of generation | Immutable; recomputed only when input or catalog changes. |
 | `RenderList` | Memoized result of the view layer | Recomputed on orientation change. |
 | Camera (center, zoom) | Renderer | Changes every frame during pan; kept out of React and Zustand to avoid re-renders. |
-| Selection, orientation, panels | Zustand | Read by UI and renderer. |
+| Selection, orientation, panels | React state in the page component | Zustand was planned here; with one page and one panel, plain React state is enough. Revisit when several component trees need the same state. |
 | Username, selected building | **URL** | The URL is the source of truth for anything shareable. |
 
 Generation may later move to a Web Worker if it exceeds the performance budget; because it is pure, this needs no redesign.

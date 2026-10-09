@@ -1,4 +1,5 @@
 import { Texture } from "pixi.js";
+import type { HitMask } from "@/core/view";
 
 // Helpers for code-drawn placeholder sprites (ART_DIRECTION.md §13).
 
@@ -35,6 +36,13 @@ export class Pixels {
     this.data.data[i + 3] = 255;
   }
 
+  /** Which pixels are opaque, for hit testing. */
+  mask(): HitMask {
+    const opaque = new Uint8Array(this.width * this.height);
+    for (let i = 0; i < opaque.length; i++) opaque[i] = this.data.data[i * 4 + 3]! > 0 ? 1 : 0;
+    return { width: this.width, height: this.height, opaque };
+  }
+
   toTexture(): Texture {
     const canvas = document.createElement("canvas");
     canvas.width = this.width;
@@ -44,6 +52,25 @@ export class Pixels {
     texture.source.scaleMode = "nearest";
     return texture;
   }
+}
+
+/**
+ * A 1 px outline around the opaque pixels of `mask`, on a canvas 2 px wider and
+ * taller (so it is drawn one pixel up and left of the sprite it outlines).
+ */
+export function outlineOf(mask: HitMask, color: Rgb): Pixels {
+  const { width, height, opaque } = mask;
+  const solid = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < width && y < height && opaque[y * width + x] === 1;
+  const pixels = new Pixels(width + 2, height + 2);
+  for (let y = -1; y <= height; y++) {
+    for (let x = -1; x <= width; x++) {
+      if (solid(x, y)) continue;
+      if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1))
+        pixels.set(x + 1, y + 1, color);
+    }
+  }
+  return pixels;
 }
 
 /** A keyed texture cache. Textures live until `clear()`. */

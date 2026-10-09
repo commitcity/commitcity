@@ -1,7 +1,7 @@
 import type { Texture } from "pixi.js";
 import type { AssetCatalog, Family } from "@/core/assets";
 import { type HitMask, type TileSize, parseBuildingKey } from "@/core/view";
-import { Pixels, type Rgb, diamondTop, outlineOf } from "../pixels";
+import { Pixels, type Rgb, diamondTop } from "../pixels";
 
 // Code-drawn placeholders for a generated city (ART_DIRECTION.md §13): 2:1 edges,
 // light from the upper left (roof lightest, left wall medium, right wall darkest),
@@ -68,7 +68,6 @@ interface Entry {
 
 export class CityPlaceholders {
   private readonly entries = new Map<string, Entry>();
-  private readonly outlines = new Map<string, Texture>();
   private readonly families = new Map<string, { family: Family; footprint: number }>();
 
   constructor(
@@ -88,22 +87,9 @@ export class CityPlaceholders {
     return this.entry(textureKey).mask;
   }
 
-  /** A 1 px outline of the texture's shape, drawn one pixel up and left of it. */
-  outline(textureKey: string, color: Rgb): Texture {
-    const key = `${textureKey}|${color.join(",")}`;
-    let texture = this.outlines.get(key);
-    if (!texture) {
-      texture = outlineOf(this.mask(textureKey), color).toTexture();
-      this.outlines.set(key, texture);
-    }
-    return texture;
-  }
-
   destroy() {
     for (const { texture } of this.entries.values()) texture.destroy(true);
-    for (const texture of this.outlines.values()) texture.destroy(true);
     this.entries.clear();
-    this.outlines.clear();
   }
 
   private entry(textureKey: string): Entry {

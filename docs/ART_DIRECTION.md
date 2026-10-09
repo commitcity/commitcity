@@ -108,9 +108,10 @@ Because the light is fixed relative to the **screen**, a building drawn for one 
 | Item | Specification | Status |
 |---|---|---|
 | Master palette | One shared palette for the whole project, **≤ 64 colors**, stored in the repository as `.gpl` (GIMP/Aseprite) and `.hex` files. | Rule |
-| Starting point | Adopt an existing, openly licensed palette from Lospec (for example *Resurrect 64*) instead of inventing one, after confirming its license. | Proposal |
+| Starting point | **[Resurrect 64](https://lospec.com/palette-list/resurrect-64) by Kerrie Lake**, unchanged, in `assets/palette/`. It has ramps for brick, glass, concrete and vegetation. The palette page states no formal license; its author allows use in commercial games, and a list of colors is generally not copyrightable (`assets/palette/README.md`). | Confirmed (milestone 4.1) |
 | Changes | Adding or changing palette colors requires a dedicated pull request and maintainer approval. | Rule |
-| Pure black / white | Avoided. Outlines and highlights use palette colors. | Guideline |
+| Pure black / white | Avoided. Outlines and highlights use palette colors. Resurrect 64 includes `#ffffff`; use it only for small sparkles. | Guideline |
+| Enforcement | `pnpm validate-assets` rejects any opaque pixel whose color is not in `commitcity.hex`. | Rule |
 
 ## 7. Line and detail rules
 
@@ -205,6 +206,8 @@ assets/
   vegetation/
 ```
 
+Sprite files are named `view-<v>.png` for the `default` variant and `view-<v>.<variant>.png` for the others, for example `view-0.abandoned.png`. One drawing covers every level listed in `levels`; draw a second building folder when a level needs a different look. A symmetric building provides view 0 only. A folder must contain exactly the files its manifest declares. **Rule.**
+
 Example `manifest.json` (the exact schema is defined in `ARCHITECTURE.md`):
 
 ```json
@@ -221,6 +224,18 @@ Example `manifest.json` (the exact schema is defined in `ARCHITECTURE.md`):
   "aiAssisted": false
 }
 ```
+
+### 12.1 Automatic checks
+
+`pnpm validate-assets` runs in CI on every pull request and lists every problem with the file, the first offending pixel, and what to change. It checks:
+
+- the manifest: every field present, no unknown fields, valid values, `id` equal to the folder name, license `CC-BY-SA-4.0`;
+- the files: every declared PNG exists, nothing undeclared;
+- the canvas: width `N × 32`, height `N × 16` plus a multiple of 4, at most 3 empty rows on top (§4.2);
+- occupancy: nothing drawn below the footprint's lower edges, beyond a 2 px overhang (§4.1);
+- hard alpha and palette colors (§4.3, §6).
+
+`pnpm pack-assets` (run automatically by `pnpm dev` and `pnpm build`) packs valid buildings into an atlas, and the dev city at `/dev/city` uses them right away, next to the placeholders.
 
 ## 13. Placeholder art
 
@@ -303,7 +318,7 @@ A reviewer checks every new asset against this list:
 | Only view `0` required in current scope | Confirmed |
 | AI-assisted art allowed with disclosure, treated as replaceable | Confirmed |
 | Base tile size 32 × 16 | Confirmed (Milestone 1.1) |
-| Starting palette (for example Resurrect 64) | Proposal — license to be checked |
+| Starting palette: Resurrect 64 by Kerrie Lake | Confirmed (milestone 4.1) |
 | Building families, levels 1–3, `annex` rule | Proposal |
 | Road auto-tiling with 16 shapes | Proposal |
 | Lights overlay for night | Proposal (later) |
@@ -311,6 +326,6 @@ A reviewer checks every new asset against this list:
 ## 17. Open questions
 
 1. Is 32 × 16 detailed enough for buildings to be recognizable, or do we need 64 × 32? *(Answered: 32 × 16, Milestone 1.1.)*
-2. Which palette do we adopt, and does it have enough material ramps (brick, glass, concrete, vegetation)?
+2. Which palette do we adopt, and does it have enough material ramps (brick, glass, concrete, vegetation)? *(Answered: Resurrect 64, milestone 4.1.)*
 3. How many building types are needed for a city to feel varied? Initial guess: 2–3 per family and footprint.
 4. Do pixel-art-specific AI tools produce consistent enough results to be worth using, compared with drawing simple buildings by hand?

@@ -172,7 +172,7 @@ Reviews keep the project healthy. They are about the code, never about the perso
 
 1. Pick an issue labeled `area: art`, or open an **Art asset** issue proposing what you want to draw.
 2. Follow [`docs/ART_DIRECTION.md`](./docs/ART_DIRECTION.md) exactly: projection, tile size, canvas and anchor, palette, light, outlines.
-3. Add a folder under `assets/` with your PNG files and a `manifest.json`, including your name in `authors`.
+3. Add a folder under `assets/buildings/` with your PNG files and a `manifest.json`, including your name in `authors` ([`assets/README.md`](./assets/README.md)). Run `pnpm validate-assets` until it passes; CI runs it too.
 4. If you used AI tools, set `"aiAssisted": true`, name the tool in the pull request, and follow §14 of the art direction.
 5. Include a screenshot of the asset placed next to existing assets at 1× and 2×.
 

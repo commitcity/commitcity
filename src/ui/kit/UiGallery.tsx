@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 const CURSORS = [
-  ["cursor-glove.png", "Pointer"],
-  ["cursor-glove-press.png", "Clicking"],
+  ["cursor-hand.png", "Pointer"],
+  ["cursor-hand-press.png", "Clicking"],
   ["cursor-fist.png", "Dragging"],
 ] as const;
 

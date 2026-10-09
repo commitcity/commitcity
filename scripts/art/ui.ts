@@ -204,43 +204,46 @@ function banner(): Canvas {
   return c;
 }
 
-/** Cursor pixels: o ink, W white, s shade, G and g gold cuff. */
+/** Cursor pixels: o ink, W white, s shade, l the creases of folded fingers. */
 const CURSOR_COLORS: Record<string, Hex> = {
   o: INK,
   W: "ffffff",
   s: IRON[3],
-  G: GOLD[2],
-  g: GOLD[1],
+  l: IRON[1],
 };
 
-/** A glove pointing up; the hotspot is the fingertip at (4, 0). */
-const GLOVE = [
-  "....oo..........",
-  "...oWso.........",
-  "...oWso.........",
-  "...oWso.........",
-  "...oWsooo.......",
-  "...oWsoWsooo....",
-  ".oooWsoWsoWsooo.",
-  "oWsoWsoWsoWsoWso",
-  "oWsoWsoWsoWsoWso",
-  "oWsWWWWWWWWWWWso",
+/**
+ * A chunky white cartoon hand pointing up, in the spirit of classic hotel and
+ * room-builder games: round fingertip, folded fingers shown by creases, thumb
+ * out to the left. The hotspot is the fingertip at (6, 0).
+ */
+const HAND = [
+  ".....ooo........",
+  "....oWWso.......",
+  "....oWWso.......",
+  "....oWWso.......",
+  "....oWWsoooo....",
+  "....oWWsoWWso...",
+  "....oWWsoWWsooo.",
+  ".oo.oWWsoWWsoWso",
+  "oWWooWWsoWWsoWso",
+  "oWWWoWWWWWWWWWso",
   ".oWWWWWWWWWWWWso",
-  "..oWWWWWWWWWWsso",
-  "...oWWWWWWWWsso.",
-  "...oGGGGGGGGGo..",
-  "...ogggggggggo..",
-  "...ooooooooooo..",
+  ".oWWWWWlWlWlWWso",
+  "..oWWWWlWlWlWWso",
+  "...oWWWWWWWWWsso",
+  "....oWWWWWWWsso.",
+  ".....ooooooooo..",
 ];
 
-/** The glove while clicking: the finger bends 2 px; hotspot (4, 2). */
-const GLOVE_PRESS = GLOVE.map((row, y) => {
-  if (y < 2) return row.slice(0, 3) + "...." + row.slice(7);
-  if (y === 2) return row.slice(0, 3) + ".oo." + row.slice(7);
+/** The hand while clicking: the finger bends 2 px; hotspot (6, 2). */
+const HAND_PRESS = HAND.map((row, y) => {
+  if (y < 2) return row.slice(0, 4) + "....." + row.slice(9);
+  if (y === 2) return row.slice(0, 4) + ".ooo." + row.slice(9);
   return row;
 });
 
-/** A closed fist for dragging the city; hotspot (8, 8). */
+/** The hand closed around the city while dragging; hotspot (8, 7). */
 const FIST = [
   "................",
   "................",
@@ -249,14 +252,14 @@ const FIST = [
   "...oWsoWsoWsoWso",
   "...oWsoWsoWsoWso",
   ".oooWWWWWWWWWWso",
-  "oWWsWWWWWWWWWWso",
-  "oWsWWWWWWWWWWWso",
-  ".oWWWWWWWWWWWsso",
+  "oWWoWWWWWWWWWWso",
+  "oWWWWWWWWWWWWWso",
+  ".oWWWWlWlWlWWsso",
   "..oWWWWWWWWWWsso",
   "...oWWWWWWWWsso.",
-  "...oGGGGGGGGGo..",
-  "...ogggggggggo..",
-  "...ooooooooooo..",
+  "....oooooooooo..",
+  "................",
+  "................",
   "................",
 ];
 
@@ -280,8 +283,8 @@ const files: Record<string, Canvas> = {
   "field.png": textField(false),
   "field-focus.png": textField(true),
   "banner-red.png": banner(),
-  "cursor-glove.png": cursor(GLOVE),
-  "cursor-glove-press.png": cursor(GLOVE_PRESS),
+  "cursor-hand.png": cursor(HAND),
+  "cursor-hand-press.png": cursor(HAND_PRESS),
   "cursor-fist.png": cursor(FIST),
 };
 for (const [name, { idle, hover }] of Object.entries(BUTTONS)) {

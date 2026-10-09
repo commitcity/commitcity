@@ -1,7 +1,8 @@
 // Validates the assets, then packs every sprite into one atlas for the app:
-// public/generated/assets/{atlas.png,catalog.json} (ARCHITECTURE.md §9).
+// public/generated/assets/{atlas.png,catalog.json} (ARCHITECTURE.md §9). Interface
+// images are copied as they are to public/generated/ui, for CSS to use.
 // Usage: pnpm pack-assets [assets-dir]
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PNG } from "pngjs";
 import { type AtlasFrame, type PackedAssets, frameKey, packShelves } from "../src/core/assets";
@@ -9,7 +10,7 @@ import { readAssets } from "./lib/readAssets";
 
 const root = process.argv[2] ?? "assets";
 const out = join("public", "generated", "assets");
-const { buildings, tiles, problems } = readAssets(root);
+const { buildings, tiles, ui, problems } = readAssets(root);
 
 if (problems.length > 0) {
   console.error(`✗ Not packing: ${problems.length} asset problem(s). Run pnpm validate-assets.`);
@@ -51,6 +52,11 @@ if (sprites.length > 0) {
   writeFileSync(join(out, "atlas.png"), PNG.sync.write(atlas));
 }
 writeFileSync(join(out, "catalog.json"), JSON.stringify(catalog, null, 2) + "\n");
+const uiOut = join("public", "generated", "ui");
+rmSync(uiOut, { recursive: true, force: true });
+mkdirSync(uiOut, { recursive: true });
+for (const { file, path } of ui) copyFileSync(path, join(uiOut, file));
+
 console.log(
-  `✓ Packed ${sprites.length} sprites from ${buildings.length} buildings and ${tiles.length} tile sets into ${out}`,
+  `✓ Packed ${sprites.length} sprites from ${buildings.length} buildings and ${tiles.length} tile sets into ${out}, and ${ui.length} interface images into ${uiOut}`,
 );

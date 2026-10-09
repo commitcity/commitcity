@@ -1,9 +1,7 @@
 {
   "id": "tree",
   "kind": "vegetation",
-  "authors": [
-    "CommitCity contributors"
-  ],
+  "authors": ["CommitCity contributors"],
   "license": "CC-BY-SA-4.0",
   "aiAssisted": true
 }

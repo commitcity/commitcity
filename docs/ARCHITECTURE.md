@@ -201,8 +201,8 @@ interface RenderItem {
 | Rule | Status |
 |---|---|
 | Generation never calls `Math.random`, `Date.now`, or anything locale- or environment-dependent. | Confirmed |
-| Randomness comes from a small seeded PRNG implemented in the repository (for example `sfc32` or `mulberry32`, ~10 lines, no dependency) and a string hash (for example `cyrb53`). | Proposal |
-| **Every repository has its own random stream**, seeded from `hash(owner + ":" + repo.id)`. Adding a repository never changes the random choices of another. | Confirmed |
+| Randomness comes from a small seeded PRNG implemented in the repository: `sfc32`, seeded through the `cyrb128` string hash, with `cyrb53` for single hashes. No dependency; only 32-bit integer math (`src/core/random`). | Confirmed (Milestone 2.1) |
+| **Every repository has its own random stream**, seeded from `hash(owner + ":" + repo.id)`. Adding a repository never changes the random choices of another. Each decision type gets its own stream (`owner:id/building`, `owner:id/decoration`, …), so drawing one more number for one never shifts another. | Confirmed |
 | All sorting uses explicit, total tie-breakers (for example `createdAt`, then `id`). | Confirmed |
 | Only integer math for positions. | Confirmed |
 | `generatorVersion` is bumped whenever output for the same input could change. Stability is guaranteed only within one version. | Confirmed |

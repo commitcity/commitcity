@@ -1,0 +1,150 @@
+{
+  "owner": "edge-cases",
+  "snapshotAt": "2026-10-01T00:00:00Z",
+  "repos": [
+    {
+      "id": "R_edge_same_time_b",
+      "name": "same-time-b",
+      "description": "Created in the same second as same-time-a; the id breaks the tie",
+      "createdAt": "2020-05-05T10:00:00Z",
+      "pushedAt": "2021-01-01T00:00:00Z",
+      "primaryLanguage": "Go",
+      "stars": 3,
+      "commitCount": 12,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_same_time_a",
+      "name": "same-time-a",
+      "description": "Created in the same second as same-time-b",
+      "createdAt": "2020-05-05T10:00:00Z",
+      "pushedAt": "2021-01-01T00:00:00Z",
+      "primaryLanguage": "Go",
+      "stars": 3,
+      "commitCount": 12,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_fork",
+      "name": "forked-framework",
+      "description": "A fork of a popular project",
+      "createdAt": "2018-03-01T08:30:00Z",
+      "pushedAt": "2018-03-02T09:00:00Z",
+      "primaryLanguage": "JavaScript",
+      "stars": 0,
+      "commitCount": 4,
+      "isFork": true,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_archived",
+      "name": "old-experiment",
+      "description": "Archived long ago",
+      "createdAt": "2015-07-14T22:10:00Z",
+      "pushedAt": "2016-01-01T00:00:00Z",
+      "primaryLanguage": "PHP",
+      "stars": 15,
+      "commitCount": 210,
+      "isFork": false,
+      "isArchived": true
+    },
+    {
+      "id": "R_edge_archived_fork",
+      "name": "archived-fork",
+      "description": null,
+      "createdAt": "2016-11-30T12:00:00Z",
+      "pushedAt": null,
+      "primaryLanguage": "Ruby",
+      "stars": 1,
+      "commitCount": 1,
+      "isFork": true,
+      "isArchived": true
+    },
+    {
+      "id": "R_edge_no_language",
+      "name": "empty-repo",
+      "description": null,
+      "createdAt": "2022-02-02T02:02:02Z",
+      "pushedAt": null,
+      "primaryLanguage": null,
+      "stars": 0,
+      "commitCount": 0,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_unknown_commits",
+      "name": "huge-history",
+      "description": "Commit count unavailable from the API",
+      "createdAt": "2017-09-09T09:09:09Z",
+      "pushedAt": "2026-09-30T23:59:59Z",
+      "primaryLanguage": "C++",
+      "stars": 2400,
+      "commitCount": null,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_rare_language",
+      "name": "brainfun",
+      "description": "Language that no family mapping covers",
+      "createdAt": "2021-04-01T00:00:00Z",
+      "pushedAt": "2021-04-01T00:00:00Z",
+      "primaryLanguage": "Brainfuck",
+      "stars": 7,
+      "commitCount": 3,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_star_boundaries_9",
+      "name": "nine-stars",
+      "description": "Just below the 10-star footprint threshold",
+      "createdAt": "2023-01-01T00:00:00Z",
+      "pushedAt": "2023-06-01T00:00:00Z",
+      "primaryLanguage": "Python",
+      "stars": 9,
+      "commitCount": 49,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_star_boundaries_10",
+      "name": "ten-stars",
+      "description": "Exactly at the 10-star footprint threshold",
+      "createdAt": "2023-01-02T00:00:00Z",
+      "pushedAt": "2023-06-01T00:00:00Z",
+      "primaryLanguage": "Python",
+      "stars": 10,
+      "commitCount": 50,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_unicode",
+      "name": "café-ação-日本",
+      "description": "Non-ASCII name and description: ação, 日本語, emoji 🏙️",
+      "createdAt": "2024-12-31T23:59:59Z",
+      "pushedAt": "2025-01-01T00:00:00Z",
+      "primaryLanguage": "TypeScript",
+      "stars": 42,
+      "commitCount": 500,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_edge_megastar",
+      "name": "famous-tool",
+      "description": "Far above the largest footprint threshold",
+      "createdAt": "2019-06-15T15:30:00Z",
+      "pushedAt": "2026-09-20T10:00:00Z",
+      "primaryLanguage": "Rust",
+      "stars": 98000,
+      "commitCount": 15000,
+      "isFork": false,
+      "isArchived": false
+    }
+  ]
+}

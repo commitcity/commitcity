@@ -10,16 +10,16 @@ Explore it like a small city-builder: pan, zoom, click a building to see the rep
 
 ## Status
 
-🚧 **Phase 0 — Specification.** There is no application code yet. We are defining the project carefully before building it, one small milestone at a time.
+🚧 **Phase 5 — GitHub data and public pages.** Open `/u/<username>` to see a real city; the first public release (v0.1) follows the deployment.
 
 | Phase | Name | Status |
 |---|---|---|
-| 0 | Specification | **In progress** |
-| 1 | Rendering foundation | Next |
-| 2 | Deterministic generation | Planned |
-| 3 | Explorable fixture city | Planned |
-| 4 | Asset pipeline and first art | Planned |
-| 5 | GitHub data and public pages (v0.1) | Planned |
+| 0 | Specification | Done |
+| 1 | Rendering foundation | Done |
+| 2 | Deterministic generation | Done |
+| 3 | Explorable fixture city | Done |
+| 4 | Asset pipeline and first art | Done |
+| 5 | GitHub data and public pages (v0.1) | **In progress** |
 | 6 | Polish and scale | Planned |
 
 See the full [roadmap](./docs/ROADMAP.md).
@@ -41,6 +41,7 @@ CommitCity is a **visualization, not a simulation**: no budgets, taxes, or disas
 | [Art Direction](./docs/ART_DIRECTION.md) | Pixel-art rules, tile and sprite specification, AI-assisted art policy |
 | [Architecture](./docs/ARCHITECTURE.md) | Stack, system layers, data models, procedural generation |
 | [Roadmap](./docs/ROADMAP.md) | Phases, milestones, acceptance criteria, risks |
+| [Deployment](./docs/DEPLOYMENT.md) | Running CommitCity on Vercel's free tier |
 | [Decisions](./docs/decisions/) | Architecture Decision Records |
 | [Contributing](./CONTRIBUTING.md) | How to contribute code, art, and docs; governance; licensing |
 

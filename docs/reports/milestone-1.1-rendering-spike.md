@@ -1,6 +1,6 @@
 # Milestone 1.1 — Rendering spike results
 
-Status: **in progress.** Depth sorting and the view transform are checked. Performance on real hardware and the tile-size decision are still open.
+Status: **done**, except the phone measurement, which is deferred to #10.
 
 Run it with `pnpm dev` and open `/dev/spike`. Query parameters make a view reproducible: `scene=benchmark`, `o=0..3`, `tile=64`, `zoom=1..8`, `pan=1` (auto-pan for FPS measurements).
 
@@ -14,7 +14,7 @@ Hard-cases scene (`fixtures/spike/hard-cases.json`): a tall building behind a sh
 | **Orientation 2** | **Orientation 3** |
 | ![orientation 2](images/spike-hard-cases-o2.png) | ![orientation 3](images/spike-hard-cases-o3.png) |
 
-No sorting errors found. The front-corner rule from the original proposal fails when a small building stands against a large one's wall, so the sort is now topological (see `ARCHITECTURE.md` §7.2 and `src/core/view/depth.ts`).
+No sorting errors found. **Confirmed.** The front-corner rule from the original proposal fails when a small building stands against a large one's wall, so the sort is now topological (see `ARCHITECTURE.md` §7.2 and `src/core/view/depth.ts`).
 
 ## Tile size
 
@@ -22,7 +22,9 @@ No sorting errors found. The front-corner rule from the original proposal fails 
 |---|---|
 | ![32 × 16](images/spike-hard-cases-o0.png) | ![64 × 32](images/spike-hard-cases-64.png) |
 
-At the same on-screen size the two look identical with placeholders; the difference is how much detail an artist (or an AI image tool) can put into each tile, and how much art has to be drawn. **Decision pending — maintainers.**
+At the same on-screen size the two look identical with placeholders; the difference is how much detail an artist (or an AI image tool) can put into each tile, and how much art has to be drawn.
+
+**Decision (2026-10-09): 32 × 16.** It keeps the art effort per building low, which matters while there is no dedicated artist, and matches the dense look of the reference. `ART_DIRECTION.md` is updated. The 64 × 32 switch stays in the spike page only.
 
 ## Benchmark
 
@@ -33,10 +35,10 @@ At the same on-screen size the two look identical with placeholders; the differe
 | Measurement | Result |
 |---|---|
 | Building the sorted render list (all 8,100 ground tiles and 300 buildings), Node 22 | 11–34 ms per orientation change |
-| FPS while panning, mid-range laptop | _pending_ |
-| FPS while panning, phone | _pending_ |
+| FPS while panning, desktop (RTX 2060, 1920 × 1080, DPR 1, Chrome 152, zoom 1, whole city on screen) | **179 fps** average, 175 fps in the slowest 5 % of frames, 1 of 1,794 frames below 55 fps |
+| FPS while panning, phone | _deferred to #10_ |
 
-The screenshots above come from headless Chromium with software WebGL (SwiftShader), which says nothing about real frame rates.
+The desktop GPU is stronger than the mid-range laptop in the target, so the phone result in #10 is the more telling one. The screenshots above come from headless Chromium with software WebGL (SwiftShader), which says nothing about real frame rates.
 
 ## Pixel integrity
 

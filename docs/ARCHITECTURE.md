@@ -26,7 +26,7 @@ Each decision is marked as **Confirmed**, **Proposal** (to be validated, usually
 |---|---|---|---|
 | **TypeScript** (strict) | Keep | Shared types between generation, rendering, and UI; essential for contributors. | Confirmed |
 | **Next.js (App Router)** | Keep | Public city pages need server rendering, caching, and social preview images; it deploys natively to Vercel's free tier. The renderer itself runs only on the client. | Confirmed |
-| **PixiJS v8** | Keep | Mature WebGL/WebGPU 2D sprite renderer with batching, texture atlases, and nearest-neighbor scaling. Fits a sprite-based isometric city. | Proposal — validated by first milestone |
+| **PixiJS v8** | Keep | Mature WebGL/WebGPU 2D sprite renderer with batching, texture atlases, and nearest-neighbor scaling. Fits a sprite-based isometric city. | Confirmed — Milestone 1.1 (phone measurement pending, #10) |
 | **@pixi/react** | Defer | Declaring thousands of sprites as React elements adds reconciliation overhead and makes sorting and culling harder to control. Proposal: PixiJS used imperatively inside one client component; React is used for UI only. Can be revisited. | Proposal |
 | **Tailwind CSS** | Keep (UI only) | Fast, consistent styling for panels and pages. Never used inside the canvas. | Confirmed |
 | **Zustand** | Keep (small) | Lightweight store for UI state (selection, panels, orientation). Not used for city data or per-frame camera updates. | Confirmed |
@@ -337,7 +337,7 @@ tie-break      =     front-corner sum (vx + vy + 2 × (footprint - 1)), then vx,
 
 Pairs that sit diagonally (behind on one axis, in front on the other) never overlap on screen, so they have no order. The sort is O(n²) and runs only when the city or the orientation changes.
 
-The front-corner sum alone, the original proposal, is **not** enough: a small object standing against the right or left wall of a large one has a lower sum than the large one but must be drawn after it. The milestone 1.1 unit tests include this case (`src/core/view/depth.test.ts`). **Proposal — to be confirmed by the milestone 1.1 hard-cases scene.** The fallback, if needed, is slicing large sprites into 1-tile-wide vertical strips, each sorted independently.
+The front-corner sum alone, the original proposal, is **not** enough: a small object standing against the right or left wall of a large one has a lower sum than the large one but must be drawn after it. The milestone 1.1 unit tests include this case (`src/core/view/depth.test.ts`). **Confirmed** by the Milestone 1.1 hard-cases scene in all four orientations. The fallback, if needed, is slicing large sprites into 1-tile-wide vertical strips, each sorted independently.
 
 ### 7.3 Pixel integrity
 
@@ -401,7 +401,7 @@ The individual-building limit (300) is adjusted to whatever these targets allow.
 | Decision | Alternatives | Why this one | Status |
 |---|---|---|---|
 | Pure generation separated from rendering | Generator inside the renderer | Testable, reusable on the server (preview images), workable in a Web Worker | Confirmed |
-| PixiJS used imperatively | @pixi/react; Canvas 2D; Phaser | Control over sorting, culling, and performance; React stays for UI | Proposal |
+| PixiJS used imperatively | @pixi/react; Canvas 2D; Phaser | Control over sorting, culling, and performance; React stays for UI | Confirmed |
 | One fixed 4×4 lot per repository | Variable-size bin packing | Strongest stability and trivial timelapse, at the cost of density | Proposal |
 | Chronological spiral placement | Placement by language district; random placement | Stable, meaningful ("old code in the center"), timelapse-friendly | Proposal |
 | Deleted repositories shift newer ones | Persisting positions in a database | Avoids a database; deletion is rare | Proposal |

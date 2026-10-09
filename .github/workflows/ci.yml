@@ -37,6 +37,9 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
+      - name: Validate assets
+        run: pnpm validate-assets
+
       - name: Test
         run: pnpm test
 

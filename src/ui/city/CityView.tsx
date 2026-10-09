@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PLACEHOLDER_CATALOG } from "@/core/assets";
+import { PLACEHOLDER_MANIFESTS, createCatalog } from "@/core/assets";
 import { generateCity } from "@/core/generation";
 import { parseCityInput } from "@/core/model";
 import { type Orientation, TILE_32 } from "@/core/view";
 import type { CityRenderer } from "@/renderer/city/CityRenderer";
+import { type LoadedAssets, loadAssets } from "@/renderer/city/loadAssets";
 import tiny from "../../../fixtures/tiny.json";
 import medium from "../../../fixtures/medium.json";
 import large from "../../../fixtures/large.json";
@@ -14,6 +15,8 @@ import { InfoPanel } from "./InfoPanel";
 import { type CityParams, FIXTURES, type FixtureName, cityQuery } from "./params";
 
 const ORIENTATIONS: Orientation[] = [0, 1, 2, 3];
+/** Written by `pnpm pack-assets` (runs before `dev` and `build`). */
+const CATALOG_URL = "/generated/assets/catalog.json";
 /** Keyboard pan step, in CSS pixels. */
 const PAN_STEP = 64;
 
@@ -39,8 +42,14 @@ export function CityView({ initial }: { initial: CityParams }) {
   const [stats, setStats] = useState({ fps: 0, sprites: 0 });
   const [hovered, setHovered] = useState<string | null>(null);
 
+  // Undefined while loading; null when no artist assets have been packed.
+  const [assets, setAssets] = useState<LoadedAssets | null | undefined>(undefined);
+  const catalog = useMemo(
+    () => createCatalog([...PLACEHOLDER_MANIFESTS, ...(assets?.packed.buildings ?? [])]),
+    [assets],
+  );
   const input = useMemo(() => parseCityInput(FIXTURE_DATA[fixture]), [fixture]);
-  const model = useMemo(() => generateCity(input, PLACEHOLDER_CATALOG), [input]);
+  const model = useMemo(() => generateCity(input, catalog), [input, catalog]);
   const repos = useMemo(() => new Map(input.repos.map((r) => [r.id, r])), [input]);
 
   const [selected, setSelected] = useState<string | null>(
@@ -49,6 +58,21 @@ export function CityView({ initial }: { initial: CityParams }) {
   // Center on a building selected by the URL once the city is on screen.
   const focusPending = useRef(selected !== null);
   const shownModel = useRef<typeof model | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAssets(CATALOG_URL)
+      .catch((error: unknown) => {
+        console.error("Artist assets failed to load; drawing placeholders.", error);
+        return null;
+      })
+      .then((loaded) => {
+        if (!cancelled) setAssets(loaded);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,16 +104,16 @@ export function CityView({ initial }: { initial: CityParams }) {
 
   useEffect(() => {
     const renderer = rendererRef.current;
-    if (!ready || !renderer) return;
+    if (!ready || !renderer || assets === undefined) return;
     const rotated = shownModel.current === model;
     shownModel.current = model;
-    renderer.setScene({ model, catalog: PLACEHOLDER_CATALOG, orientation, tile: TILE_32 });
+    renderer.setScene({ model, catalog, orientation, tile: TILE_32, assets });
     // Keep the selection in view: on load from the URL, and after a rotation.
     if (selected && (focusPending.current || rotated)) renderer.focus(selected);
     focusPending.current = false;
     // `selected` is read only to keep it in view.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, model, orientation]);
+  }, [ready, model, orientation, assets, catalog]);
 
   useEffect(() => {
     if (ready) rendererRef.current?.setSelected(selected);

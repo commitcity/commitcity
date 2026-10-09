@@ -14,13 +14,16 @@ import {
 } from "@/core/view";
 import type { Rgb } from "../pixels";
 import { PixelStage } from "../stage";
-import { CityPlaceholders } from "./placeholders";
+import type { LoadedAssets } from "./loadAssets";
+import { CityTextures } from "./textures";
 
 export interface CityScene {
   model: CityModel;
   catalog: AssetCatalog;
   orientation: Orientation;
   tile: TileSize;
+  /** Artist sprites; null draws placeholders only. */
+  assets: LoadedAssets | null;
 }
 
 const HOVER_COLOR: Rgb = [255, 255, 255];
@@ -32,7 +35,7 @@ const SELECTED_COLOR: Rgb = [255, 214, 64];
  */
 export class CityRenderer {
   private readonly stage = new PixelStage();
-  private placeholders: CityPlaceholders | null = null;
+  private textures: CityTextures | null = null;
   private scene: CityScene | null = null;
   private objects: RenderItem[] = [];
   private hovered: string | null = null;
@@ -89,32 +92,38 @@ export class CityRenderer {
   /** Centers the camera on a building's sprite. */
   focus(repoId: string) {
     const item = this.objects.find((o) => o.pickId === repoId);
-    if (!item || !this.placeholders) return;
-    const { width, height } = this.placeholders.mask(item.textureKey);
+    if (!item || !this.textures) return;
+    const { width, height } = this.textures.mask(item.textureKey);
     const origin = spriteOrigin(item, width, height);
     this.stage.centerOn(origin.x + Math.floor(width / 2), origin.y + Math.floor(height / 2));
   }
 
   /** The building with a visible pixel at a 1× world point, if any. */
   pick(x: number, y: number): string | null {
-    const placeholders = this.placeholders;
-    if (!placeholders) return null;
-    return pickAt(this.objects, { x, y }, (key) => placeholders.mask(key));
+    const textures = this.textures;
+    if (!textures) return null;
+    return pickAt(this.objects, { x, y }, (key) => textures.mask(key));
   }
 
   setScene(scene: CityScene) {
     if (!this.stage.ready) return;
     const previous = this.scene;
     this.scene = scene;
-    if (!this.placeholders || previous?.catalog !== scene.catalog || previous.tile !== scene.tile) {
-      this.placeholders?.destroy();
-      this.placeholders = new CityPlaceholders(scene.catalog, scene.tile);
+    // Sprites go first: they reference the textures that may be replaced below.
+    this.stage.clear();
+    if (
+      !this.textures ||
+      previous?.catalog !== scene.catalog ||
+      previous.tile !== scene.tile ||
+      previous.assets !== scene.assets
+    ) {
+      this.textures?.destroy();
+      this.textures = new CityTextures(scene.catalog, scene.tile, scene.assets);
     }
-    const textures = this.placeholders;
+    const textures = this.textures;
     const { tile } = scene;
     const list = buildRenderList(scene.model, scene.orientation, tile);
 
-    this.stage.clear();
     for (const item of list.ground) {
       const sprite = new Sprite(textures.texture(item.textureKey));
       sprite.position.set(item.screenX - tile.width / 2, item.screenY);
@@ -156,8 +165,8 @@ export class CityRenderer {
   private drawOverlay() {
     const layer = this.stage.overlayLayer;
     layer.removeChildren().forEach((c) => c.destroy());
-    const placeholders = this.placeholders;
-    if (!placeholders) return;
+    const textures = this.textures;
+    if (!textures) return;
     const outlines: [string | null, Rgb][] = [
       [this.hovered !== this.selected ? this.hovered : null, HOVER_COLOR],
       [this.selected, SELECTED_COLOR],
@@ -165,9 +174,9 @@ export class CityRenderer {
     for (const [repoId, color] of outlines) {
       const item = repoId && this.objects.find((o) => o.pickId === repoId);
       if (!item) continue;
-      const { width, height } = placeholders.mask(item.textureKey);
+      const { width, height } = textures.mask(item.textureKey);
       const origin = spriteOrigin(item, width, height);
-      const sprite = new Sprite(placeholders.outline(item.textureKey, color));
+      const sprite = new Sprite(textures.outline(item.textureKey, color));
       sprite.position.set(origin.x - 1, origin.y - 1);
       layer.addChild(sprite);
     }
@@ -175,7 +184,7 @@ export class CityRenderer {
 
   destroy() {
     this.stage.destroy();
-    this.placeholders?.destroy();
+    this.textures?.destroy();
   }
 }
 

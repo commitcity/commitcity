@@ -31,6 +31,7 @@ Each decision is marked as **Confirmed**, **Proposal** (to be validated, usually
 | **Tailwind CSS** | Keep (UI only) | Fast, consistent styling for panels and pages. Never used inside the canvas. | Confirmed |
 | **Zustand** | Keep (small), when needed | Lightweight store for UI state (selection, panels, orientation). Not used for city data or per-frame camera updates. Not added yet: milestone 3.2 needed only one component's state (§8). | Deferred |
 | **Vitest** | Keep | Fast unit tests; generation is pure, so it is highly testable. | Confirmed |
+| **tsx**, **pngjs** (dev only) | Keep | `tsx` runs the asset scripts in TypeScript with the same `@/` imports as `src/core`, so the rules are shared, not copied. `pngjs` reads and writes PNGs in Node with no native build step. | Confirmed (milestone 4.1) |
 | **PostgreSQL** | Defer | No requirement yet. Public pages can be served from cached API results. It may become necessary for timelapse history or rate-limit protection. | Confirmed (deferred) |
 | **GitHub API** | Later phase | Fixtures first; the API adapter comes after rendering and generation are proven. GraphQL preferred (see §10). | Confirmed |
 | **Package manager** | pnpm | Fast, strict dependency resolution, common in open-source projects. | Proposal |
@@ -389,9 +390,9 @@ Generation may later move to a Web Worker if it exceeds the performance budget; 
 ## 9. Asset pipeline
 
 1. Artists add a building folder with PNGs and `manifest.json` (`ART_DIRECTION.md` §12).
-2. A validation script checks every manifest (schema, files exist, canvas sizes match footprints, palette colors only, hard alpha). It runs in CI and blocks invalid assets. **Proposal.**
-3. A packing script builds texture atlases and a catalog JSON. **Proposal; tool choice open.**
-4. The app loads the catalog and atlases through PixiJS's asset loader.
+2. A validation script checks every manifest (schema, files exist, canvas sizes match footprints, palette colors only, hard alpha). It runs in CI and blocks invalid assets. **Confirmed** (milestone 4.1): the rules live in `src/core/assets/validate.ts`, are unit-tested, and run through `pnpm validate-assets` (`ART_DIRECTION.md` §12.1).
+3. A packing script builds texture atlases and a catalog JSON. **Confirmed** (milestone 4.1): `pnpm pack-assets` shelf-packs every sprite into one `atlas.png` and writes `catalog.json` (`PackedAssets`: manifests plus frame rectangles) to `public/generated/assets/`, which is not committed. It runs before `dev` and `build`. One atlas is enough until it passes 2048 px; splitting it is future work.
+4. The app fetches the catalog and atlas at runtime and decodes the atlas once, for both textures and hit masks. A building key resolves to a frame by manifest, nearest available view (`resolveView`) and variant; every level of a manifest uses the same drawing. Keys without a frame fall back to code-drawn placeholders, which stay in the catalog until real art covers every family and footprint (milestone 4.2).
 5. `catalogVersion` (a hash of all manifests) is recorded in each `CityModel`.
 
 ## 10. GitHub data (later phase)

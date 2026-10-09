@@ -165,6 +165,7 @@ interface Building {
   manifestId: string;
   origin: { x: number; y: number };   // top (back) corner of the footprint
   footprint: 1 | 2 | 3 | 4;
+  family: Family;                      // resolved family, also used by placeholders
   facing: Orientation;                 // side that faces the road
   level: number;
   variant: Variant;
@@ -173,7 +174,7 @@ interface Building {
 
 interface RoadTile { x: number; y: number }       // shape resolved in the view layer
 interface GroundTile { x: number; y: number; kind: "grass" | "dirt" | "pavement"; variant: number }
-interface Decoration { x: number; y: number; kind: string; variant: number }
+interface Decoration { x: number; y: number; kind: string; variant: number; repoId: string }
 interface Aggregate { origin: { x: number; y: number }; repoIds: string[] }
 ```
 
@@ -237,7 +238,7 @@ The city is a grid of **blocks**. Each block contains **2 × 2 lots**, and each 
 
 - Block interior: 8 × 8 tiles. Block period including the road: 9 tiles. **Proposal.**
 - Every repository receives **exactly one lot**, regardless of its building size. **Proposal.**
-- A 4 × 4 lot fits any allowed footprint (1–4). The building sits at the front of the lot, facing the nearest road; the rest of the lot is filled with deterministic **lot decoration** belonging to that repository (gardens, trees, parking, sheds), chosen from its own random stream.
+- A 4 × 4 lot fits any allowed footprint (1–4). The building sits in the lot's outer corner, against both roads that border the lot, and faces one of them (chosen from its random stream); the rest of the lot is filled with deterministic **lot decoration** belonging to that repository (gardens, trees, parking, sheds), chosen from its own random stream.
 
 **Why one fixed-size lot per repository?** It makes placement depend *only* on creation order. A repository growing from a 2×2 to a 3×3 building never moves any other building. This is the core stability guarantee and makes timelapse trivial.
 
@@ -288,8 +289,8 @@ All thresholds are **proposals** to be tuned with real data.
 ### 6.6 Roads, ground, and decoration
 
 - Roads surround every block that contains at least one occupied lot. Road shapes (straight, corner, T, crossing) are **not** stored; the view layer derives them from neighbors, so they stay correct under rotation. **Proposal.**
-- Ground fills the city bounds plus a small margin, with variants from a position-based hash (`hash(seed, x, y)`), so ground never depends on repository order.
-- Decoration is placed only on free tiles of an occupied lot, from that repository's random stream.
+- Ground fills the city bounds plus a 2-tile margin, with variants from a position-based hash (`hash(seed, x, y)`), so ground never depends on repository order. Lots of archived repositories are dirt.
+- Decoration is placed only on free tiles of an occupied lot, from that repository's `decoration` stream. Every lot tile draws its numbers whether or not the building covers it, so a building growing never reshuffles the rest of its lot's decoration.
 
 ### 6.7 Large accounts (> 300 repositories)
 

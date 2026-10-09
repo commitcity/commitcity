@@ -48,8 +48,8 @@ export function UiGallery() {
         <div className="ui-gallery-row">
           {CURSORS.map(([file, name]) => (
             <figure key={file}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- pixel art at 2x, no optimization */}
-              <img src={`/generated/ui/${file}`} alt="" width={64} height={64} />
+              {/* eslint-disable-next-line @next/next/no-img-element -- cursor images at 2x, shown at 4x */}
+              <img src={`/generated/ui/${file}`} alt="" width={88} height={88} />
               <figcaption>{name}</figcaption>
             </figure>
           ))}

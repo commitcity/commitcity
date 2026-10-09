@@ -24,8 +24,7 @@ export function UsernameForm() {
       }}
     >
       <label htmlFor="login">GitHub username</label>
-      <div>
-        <span aria-hidden="true">github.com/</span>
+      <div className="username-row">
         <input
           id="login"
           name="login"
@@ -34,6 +33,7 @@ export function UsernameForm() {
             setLogin(e.target.value);
             setInvalid(false);
           }}
+          className="ui-field"
           placeholder="octocat"
           autoComplete="off"
           autoCapitalize="none"
@@ -42,7 +42,9 @@ export function UsernameForm() {
           aria-invalid={invalid}
           aria-describedby={invalid ? "login-error" : undefined}
         />
-        <button type="submit">Build city</button>
+        <button type="submit" className="ui-button ui-button--gold">
+          Open city
+        </button>
       </div>
       {invalid && (
         <p id="login-error" role="alert">

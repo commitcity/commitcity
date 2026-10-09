@@ -14,19 +14,19 @@
   line-height: 1.25;
   image-rendering: pixelated;
   cursor:
-    url("/generated/ui/cursor-hand.png") 13 1,
+    url("/generated/ui/cursor-hand.png") 4 4,
     auto;
 }
 
 .ui :is(a, button, select, summary, label[for]) {
   cursor:
-    url("/generated/ui/cursor-hand.png") 13 1,
+    url("/generated/ui/cursor-hand.png") 4 4,
     pointer;
 }
 
 .ui :is(a, button, summary):active {
   cursor:
-    url("/generated/ui/cursor-hand-press.png") 13 5,
+    url("/generated/ui/cursor-hand-press.png") 10 10,
     pointer;
 }
 
@@ -37,7 +37,7 @@
 .ui .grabbing,
 .ui .grabbing * {
   cursor:
-    url("/generated/ui/cursor-fist.png") 16 14,
+    url("/generated/ui/cursor-fist.png") 22 22,
     grabbing;
 }
 

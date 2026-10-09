@@ -329,7 +329,7 @@ Menus, panels, buttons and cursors share the city's palette and hard pixels, in 
 | Scale | Drawn at 1x and shown at whole multiples: 2 CSS px per art pixel (`--px`), 3 on wide screens. |
 | Nine-slice | Panels: 24 × 24, slice 8. Buttons and text field: 18 × 18, slice 6. Banner: 48 × 20, slice 4 14 8 14. Edges must look right when repeated or stretched along their length. |
 | Buttons | Three images: idle, hover (one ramp step lighter) and pressed (2 px lower, no lip). |
-| Cursors | 16 × 16 drawn, written at 2x (32 × 32), since browsers show cursor images at their CSS size. Pointer hotspot at the fingertip. |
+| Cursors | An iron gauntlet in three-quarter view, 22 × 22 drawn, written at 2x (44 × 44), since browsers show cursor images at their CSS size. Pointer hotspot at the fingertip. |
 | Font | [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) (SIL Open Font License), loaded with `next/font`. |
 | Accessibility | Pieces are styles on real `<button>`, `<input>` and `<a>` elements, so keyboard and screen readers keep working. Every image has a CSS fallback cursor. |
 

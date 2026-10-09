@@ -204,76 +204,115 @@ function banner(): Canvas {
   return c;
 }
 
-/** Cursor pixels: o ink, W white, s shade, l the creases of folded fingers. */
+/**
+ * Cursor pixels: o ink; 1-4 iron, dark to light; e f g the cuff's iron, light
+ * to dark; d and c its gold rim; x the dark opening of the cuff.
+ */
 const CURSOR_COLORS: Record<string, Hex> = {
   o: INK,
-  W: "ffffff",
-  s: IRON[3],
-  l: IRON[1],
+  x: INK,
+  "1": IRON[0],
+  "2": IRON[1],
+  "3": IRON[2],
+  "4": IRON[3],
+  e: IRON[2],
+  f: IRON[1],
+  g: IRON[0],
+  d: GOLD[3],
+  c: GOLD[2],
 };
 
 /**
- * A chunky white cartoon hand pointing up, in the spirit of classic hotel and
- * room-builder games: round fingertip, folded fingers shown by creases, thumb
- * out to the left. The hotspot is the fingertip at (6, 0).
+ * An iron gauntlet seen in three-quarter view, pointing up and to the left:
+ * index finger out, the other fingers curled, thumb underneath. The cuff is
+ * added by `gauntlet`, which also outlines the shape.
  */
-const HAND = [
-  ".....ooo........",
-  "....oWWso.......",
-  "....oWWso.......",
-  "....oWWso.......",
-  "....oWWsoooo....",
-  "....oWWsoWWso...",
-  "....oWWsoWWsooo.",
-  ".oo.oWWsoWWsoWso",
-  "oWWooWWsoWWsoWso",
-  "oWWWoWWWWWWWWWso",
-  ".oWWWWWWWWWWWWso",
-  ".oWWWWWlWlWlWWso",
-  "..oWWWWlWlWlWWso",
-  "...oWWWWWWWWWsso",
-  "....oWWWWWWWsso.",
-  ".....ooooooooo..",
+const GAUNTLET_HAND = [
+  "......................",
+  ".oo...................",
+  "o44o..................",
+  "o343o.................",
+  ".o343o................",
+  "..o343o.ooo...........",
+  "...o343oo332o.........",
+  "....o3432o3332oo......",
+  "...oo23432o3332o2o....",
+  "..o32o23332o3322o2o...",
+  ".o3332o23322o222o1o...",
+  ".o33332o2222222221o...",
+  "..o3332o222222211o....",
+  "...oo332o22222111o....",
+  ".....oo2o2222111o.....",
+  ".......o22221111o.....",
+  "........o221111o......",
+  ".........oo11oo.......",
+  "......................",
+  "......................",
+  "......................",
+  "......................",
 ];
 
-/** The hand while clicking: the finger bends 2 px; hotspot (6, 2). */
-const HAND_PRESS = HAND.map((row, y) => {
-  if (y < 2) return row.slice(0, 4) + "....." + row.slice(9);
-  if (y === 2) return row.slice(0, 4) + ".ooo." + row.slice(9);
-  return row;
-});
-
-/** The hand closed around the city while dragging; hotspot (8, 7). */
-const FIST = [
-  "................",
-  "................",
-  "................",
-  "....oo.oo.oo.oo.",
-  "...oWsoWsoWsoWso",
-  "...oWsoWsoWsoWso",
-  ".oooWWWWWWWWWWso",
-  "oWWoWWWWWWWWWWso",
-  "oWWWWWWWWWWWWWso",
-  ".oWWWWlWlWlWWsso",
-  "..oWWWWWWWWWWsso",
-  "...oWWWWWWWWsso.",
-  "....oooooooooo..",
-  "................",
-  "................",
-  "................",
-];
+/**
+ * The gauntlet, with the index finger cut back to diagonal `reach` (0 keeps it
+ * whole): 4 bends it while clicking, 11 curls it into the fist for dragging.
+ */
+function gauntlet(reach: number): string[] {
+  const N = GAUNTLET_HAND.length;
+  const g = GAUNTLET_HAND.map((row) => [...row]);
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) if (x + y <= reach && Math.abs(x - y) <= 2) g[y]![x] = ".";
+  // Drop outline pixels the cut left with nothing to outline.
+  const filled = (x: number, y: number) => !".o".includes(g[y]?.[x] ?? ".");
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++)
+      if (
+        g[y]![x] === "o" &&
+        ![-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => filled(x + dx, y + dy)))
+      )
+        g[y]![x] = ".";
+  // The cuff: a band across the wrist, flaring a little toward its open end.
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const along = x + y;
+      const across = x - y;
+      if (along < 28 || along > 36 || Math.abs(across) > 4.5 + (along - 28) * 0.12) continue;
+      g[y]![x] =
+        along === 28
+          ? "d"
+          : along === 29
+            ? "c"
+            : along >= 35
+              ? "x"
+              : across > 1.5
+                ? "e"
+                : across < -2.5
+                  ? "g"
+                  : "f";
+    }
+  // Outline the silhouette and the seam where the hand meets the cuff.
+  const at = (x: number, y: number) => g[y]?.[x] ?? ".";
+  return g.map((row, y) =>
+    row
+      .map((ch, x) => {
+        const near = [at(x + 1, y), at(x, y + 1), at(x - 1, y), at(x, y - 1)];
+        if (ch === "." && near.some((n) => n !== "." && n !== "o")) return "o";
+        if ("1234".includes(ch) && near.some((n) => "cdefgx".includes(n))) return "o";
+        return ch;
+      })
+      .join(""),
+  );
+}
 
 /** Draws a cursor grid at 2x: browsers show cursor images at their CSS pixel size. */
 function cursor(rows: readonly string[]): Canvas {
   const scale = 2;
   const c = new Canvas(rows[0]!.length * scale, rows.length * scale);
-  rows.forEach((row, y) => {
-    if (row.length !== 16) throw new Error(`cursor row ${y} is ${row.length} px wide`);
+  rows.forEach((row, y) =>
     [...row].forEach((ch, x) => {
       const color = CURSOR_COLORS[ch];
       if (color) c.rect(x * scale, y * scale, scale, scale, color);
-    });
-  });
+    }),
+  );
   return c;
 }
 
@@ -283,9 +322,9 @@ const files: Record<string, Canvas> = {
   "field.png": textField(false),
   "field-focus.png": textField(true),
   "banner-red.png": banner(),
-  "cursor-hand.png": cursor(HAND),
-  "cursor-hand-press.png": cursor(HAND_PRESS),
-  "cursor-fist.png": cursor(FIST),
+  "cursor-hand.png": cursor(gauntlet(0)),
+  "cursor-hand-press.png": cursor(gauntlet(4)),
+  "cursor-fist.png": cursor(gauntlet(11)),
 };
 for (const [name, { idle, hover }] of Object.entries(BUTTONS)) {
   files[`button-${name}.png`] = button(idle, false);

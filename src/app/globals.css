@@ -1,0 +1,208 @@
+/* Product pages (home, public city). The dev pages keep inline styles. */
+:root {
+  --bg: #1b1b26;
+  --panel: rgba(18, 18, 28, 0.85);
+  --text: #eef0f2;
+  --muted: #a9adbf;
+  --accent: #f9c22b;
+  --link: #8fd3ff;
+  --error: #f68181;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--link);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Home */
+.home {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 18vh 16px 48px;
+}
+
+.home h1 {
+  margin: 0;
+  font-size: clamp(32px, 8vw, 48px);
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.tagline {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.username-form {
+  margin: 32px 0 16px;
+}
+
+.username-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+.username-form div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--panel);
+  border: 2px solid #3e3546;
+}
+
+.username-form span {
+  color: var(--muted);
+}
+
+.username-form input {
+  flex: 1 1 140px;
+  min-width: 0;
+  padding: 8px;
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.username-form div:focus-within {
+  border-color: var(--accent);
+}
+
+.username-form button {
+  padding: 8px 14px;
+  color: #1b1b26;
+  background: var(--accent);
+  border: none;
+}
+
+.username-form [role="alert"] {
+  color: var(--error);
+}
+
+.examples,
+.home footer {
+  color: var(--muted);
+}
+
+.home footer {
+  margin-top: 64px;
+  font-size: 13px;
+}
+
+/* Full-page messages: loading, errors */
+.message {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24vh 16px 48px;
+  text-align: center;
+}
+
+.message h1 {
+  font-size: 22px;
+}
+
+.message p {
+  color: var(--muted);
+}
+
+.message nav {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+/* Public city */
+.city {
+  position: fixed;
+  inset: 0;
+  font-size: 13px;
+}
+
+.city-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.city-bar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: center;
+  max-width: calc(100% - 16px);
+  padding: 8px 12px;
+  background: var(--panel);
+}
+
+.city-bar .brand {
+  color: var(--accent);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.city-bar h1 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.city-bar h1 a {
+  color: var(--text);
+}
+
+.city-meta,
+.city-hint {
+  color: var(--muted);
+}
+
+.city-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.city-controls button {
+  width: 28px;
+  height: 28px;
+  color: var(--text);
+  background: #3e3546;
+  border: none;
+}
+
+.city-controls button:hover {
+  background: #625565;
+}
+
+.city-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 12px 16px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: var(--panel);
+}

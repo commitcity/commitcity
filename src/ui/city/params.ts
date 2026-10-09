@@ -37,3 +37,19 @@ export function cityQuery(params: Omit<CityParams, "zoom">): string {
   if (params.repo) query.set("repo", params.repo);
   return query.toString();
 }
+
+/** Settings of the public city page: everything but the fixture. */
+export type ViewParams = Omit<CityParams, "fixture">;
+
+export function parseViewParams(query: Record<string, string | string[] | undefined>): ViewParams {
+  const { orientation, zoom, repo } = parseCityParams(query);
+  return { orientation, zoom, repo };
+}
+
+/** The query string of the public city page for the current view. */
+export function viewQuery(params: Omit<ViewParams, "zoom">): string {
+  const query = new URLSearchParams();
+  if (params.orientation !== 0) query.set("o", String(params.orientation));
+  if (params.repo) query.set("repo", params.repo);
+  return query.toString();
+}

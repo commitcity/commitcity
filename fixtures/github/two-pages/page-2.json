@@ -1,0 +1,75 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4990",
+    "x-ratelimit-reset": "1791580000",
+    "x-ratelimit-used": "10",
+    "x-ratelimit-resource": "graphql"
+  },
+  "body": {
+    "data": {
+      "repositoryOwner": {
+        "login": "Octo-Dev",
+        "repositories": {
+          "totalCount": 6,
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "Y3Vyc29yOnYyOpHOAAAABg=="
+          },
+          "nodes": [
+            {
+              "id": "R_kgDOH00004",
+              "name": "old-blog",
+              "description": "",
+              "createdAt": "2020-05-02T12:00:00Z",
+              "pushedAt": "2021-02-11T07:45:00Z",
+              "primaryLanguage": {
+                "name": "Ruby"
+              },
+              "stargazerCount": 0,
+              "isFork": false,
+              "isArchived": true,
+              "defaultBranchRef": {
+                "target": {
+                  "history": {
+                    "totalCount": 88
+                  }
+                }
+              }
+            },
+            {
+              "id": "R_kgDOH00005",
+              "name": "empty-idea",
+              "description": null,
+              "createdAt": "2024-09-09T09:09:09Z",
+              "pushedAt": "2024-09-09T09:09:09Z",
+              "primaryLanguage": null,
+              "stargazerCount": 0,
+              "isFork": false,
+              "isArchived": false,
+              "defaultBranchRef": null
+            },
+            {
+              "id": "R_kgDOH00006",
+              "name": "release-notes",
+              "description": "The release-notes project",
+              "createdAt": "2025-02-14T16:20:00Z",
+              "pushedAt": null,
+              "primaryLanguage": {
+                "name": "Markdown"
+              },
+              "stargazerCount": 0,
+              "isFork": false,
+              "isArchived": false,
+              "defaultBranchRef": {
+                "target": {}
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

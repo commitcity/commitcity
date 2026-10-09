@@ -1,0 +1,87 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4990",
+    "x-ratelimit-reset": "1791580000",
+    "x-ratelimit-used": "10",
+    "x-ratelimit-resource": "graphql"
+  },
+  "body": {
+    "data": {
+      "repositoryOwner": {
+        "login": "Octo-Dev",
+        "repositories": {
+          "totalCount": 6,
+          "pageInfo": {
+            "hasNextPage": true,
+            "endCursor": "Y3Vyc29yOnYyOpHOAAAAAw=="
+          },
+          "nodes": [
+            {
+              "id": "R_kgDOH00001",
+              "name": "dotfiles",
+              "description": "The dotfiles project",
+              "createdAt": "2018-03-04T10:00:00Z",
+              "pushedAt": "2024-11-02T08:15:00Z",
+              "primaryLanguage": {
+                "name": "Shell"
+              },
+              "stargazerCount": 2,
+              "isFork": false,
+              "isArchived": false,
+              "defaultBranchRef": {
+                "target": {
+                  "history": {
+                    "totalCount": 340
+                  }
+                }
+              }
+            },
+            {
+              "id": "R_kgDOH00002",
+              "name": "pixel-garden",
+              "description": "The pixel-garden project",
+              "createdAt": "2019-07-21T18:30:00Z",
+              "pushedAt": "2025-06-30T21:04:11Z",
+              "primaryLanguage": {
+                "name": "TypeScript"
+              },
+              "stargazerCount": 148,
+              "isFork": false,
+              "isArchived": false,
+              "defaultBranchRef": {
+                "target": {
+                  "history": {
+                    "totalCount": 912
+                  }
+                }
+              }
+            },
+            {
+              "id": "R_kgDOH00003",
+              "name": "react",
+              "description": "The library for web and native user interfaces.",
+              "createdAt": "2020-01-15T09:12:44Z",
+              "pushedAt": "2020-01-16T10:00:00Z",
+              "primaryLanguage": {
+                "name": "JavaScript"
+              },
+              "stargazerCount": 0,
+              "isFork": true,
+              "isArchived": false,
+              "defaultBranchRef": {
+                "target": {
+                  "history": {
+                    "totalCount": 15890
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

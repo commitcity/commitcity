@@ -53,6 +53,8 @@ Next.js · TypeScript · PixiJS · Tailwind CSS · Zustand · Vitest — hosted 
 
 Developers, pixel artists, designers, and writers are all welcome. Start with [CONTRIBUTING.md](./CONTRIBUTING.md), then look for issues labeled `good first issue`.
 
+AI tools are welcome too: the repository tells them its rules through [`AGENTS.md`](./AGENTS.md), and [CONTRIBUTING.md §13](./CONTRIBUTING.md#13-using-ai-tools) has the policy and ready-to-use prompts.
+
 Right now, the most helpful contribution is **reading the documents and opening issues** for anything unclear, missing, or wrong.
 
 ## License

@@ -134,7 +134,7 @@ Phase 2 is pure TypeScript in `src/core`. **No rendering.** Results are verified
 | **Objective** | Users can explore and inspect the city. |
 | **Scope** | Hover highlight, click selection with pixel-accurate hit testing, info panel (name, description, language, stars, last activity, GitHub link), selection in the URL, camera bounds, keyboard controls. |
 | **Dependencies** | 3.1. |
-| **Deliverables** | Interaction code; info panel component; Zustand UI store. |
+| **Deliverables** | Interaction code; info panel component; UI state (Zustand deferred, see `ARCHITECTURE.md` §8). |
 | **Acceptance criteria** | Clicking any visible pixel of a building selects that building and no other, including behind/in front cases; opening a URL with a selected building restores the selection; works with mouse, trackpad, touch, and keyboard. |
 | **Contributor tasks** | Info panel UI; keyboard controls; accessibility of the panel. |
 

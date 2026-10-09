@@ -326,14 +326,18 @@ UI (panels, buttons) is plain React/HTML **outside** the canvas.
 
 ### 7.2 Depth sorting
 
-With square, non-overlapping footprints, objects are sorted by the **front corner** of their footprint in view space:
+With square, non-overlapping footprints, objects are sorted in view space so that each one is drawn after everything it may cover:
 
 ```
-depth = (vx + footprint - 1) + (vy + footprint - 1)    // front corner, sum
-tie-break: vx, then pickId
+a is behind b  when  a lies entirely on the -x or -y side of b
+                     and the two overlap horizontally on screen
+order          =     topological sort over "is behind"
+tie-break      =     front-corner sum (vx + vy + 2 × (footprint - 1)), then vx, then pickId
 ```
 
-This rule is correct for most layouts of non-overlapping square footprints. Known problem cases (a tall large building next to a small one on a diagonal) are handled by **lots**: buildings are always separated by lot boundaries, roads, or decoration, which limits overlap. **Proposal — the first milestone must include a test scene with the hardest cases.** The fallback, if needed, is slicing large sprites into 1-tile-wide vertical strips, each sorted independently.
+Pairs that sit diagonally (behind on one axis, in front on the other) never overlap on screen, so they have no order. The sort is O(n²) and runs only when the city or the orientation changes.
+
+The front-corner sum alone, the original proposal, is **not** enough: a small object standing against the right or left wall of a large one has a lower sum than the large one but must be drawn after it. The milestone 1.1 unit tests include this case (`src/core/view/depth.test.ts`). **Proposal — to be confirmed by the milestone 1.1 hard-cases scene.** The fallback, if needed, is slicing large sprites into 1-tile-wide vertical strips, each sorted independently.
 
 ### 7.3 Pixel integrity
 

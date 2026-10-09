@@ -291,7 +291,8 @@
 }
 
 .book-page h1 {
-  font-size: 2em;
+  font-family: var(--font-blackletter), var(--font-pixel), serif;
+  font-size: 2.6em;
   color: #ae2334;
 }
 
@@ -347,8 +348,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: calc(44 * var(--px));
-  padding-left: calc(4 * var(--px));
+  /* Center on the front board, which leaves 8 art pixels of pages below and right. */
+  padding: calc(14 * var(--px)) calc(8 * var(--px)) calc(22 * var(--px)) calc(4 * var(--px));
   background-image: url("/generated/ui/book-cover.png");
 }
 
@@ -357,16 +358,24 @@
   transform: rotateY(180deg);
 }
 
+.book-title,
+.book-subtitle {
+  color: var(--gold);
+  text-shadow:
+    var(--px) var(--px) 0 var(--ink),
+    calc(-1 * var(--px)) 0 0 var(--ink),
+    0 calc(-1 * var(--px)) 0 var(--ink);
+}
+
 .book-title {
-  font-size: calc(var(--px) * 11);
+  font-family: var(--font-blackletter), var(--font-pixel), serif;
+  font-size: calc(var(--px) * 20);
   line-height: 1;
-  color: #ae2334;
 }
 
 .book-subtitle {
-  margin-top: calc(4 * var(--px));
-  font-size: calc(var(--px) * 5.5);
-  color: var(--paper-ink);
+  margin-top: auto;
+  font-size: calc(var(--px) * 7);
 }
 
 .book-hint {

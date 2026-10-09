@@ -316,8 +316,8 @@ function cursor(rows: readonly string[]): Canvas {
   return c;
 }
 
-/** Red leather for the book, darkest first. */
-const LEATHER = ["45293f", "6e2727", "ae2334", "e83b3b"] as const;
+/** Purple leather for the book, darkest first. */
+const LEATHER = ["45293f", "6b3e75", "905ea9", "a884f3"] as const;
 
 /** Book sizes, in art pixels: the open spread, and one board (the closed cover). */
 const BOOK_W = 248;
@@ -330,98 +330,169 @@ function leather(c: Canvas, x0: number, y0: number, w: number, h: number, seed: 
   for (let y = y0; y < y0 + h; y++)
     for (let x = x0; x < x0 + w; x++) {
       const { d, side } = edge(x - x0, y - y0, w, h);
-      if (cornerCut(x - x0, y - y0, w, h, 2)) continue;
-      let color: Hex = LEATHER[2];
+      if (cornerCut(x - x0, y - y0, w, h, 3)) continue;
+      let color: Hex = LEATHER[1];
       if (d === 0) color = INK;
-      else if (d === 1) color = lit(side) ? LEATHER[3] : LEATHER[1];
-      else if (noise(seed, x, y) < 0.025) color = LEATHER[1];
-      else if (noise(seed, "hi", x, y) < 0.01) color = LEATHER[3];
+      else if (d === 1) color = lit(side) ? LEATHER[2] : LEATHER[0];
+      else if (noise(seed, x, y) < 0.03) color = LEATHER[0];
+      else if (noise(seed, "hi", x, y) < 0.012) color = LEATHER[2];
       c.set(x, y, color);
     }
 }
 
-/** A gold cube on a 2:1 diamond, like a tiny building: the city's emblem. */
-function emblem(c: Canvas, cx: number, top: number) {
-  const w = 24;
-  const wall = 10;
+/**
+ * A small isometric building: a 2:1 diamond roof over two walls, with rows of
+ * lit windows. `top` is the roof's top pixel.
+ */
+function tower(c: Canvas, cx: number, top: number, w: number, wall: number) {
+  const half = w / 2;
   for (let x = 0; x < w; x++) {
-    const t = Math.ceil((x < w / 2 ? w / 2 - 1 - x : x - w / 2) / 2);
-    for (let y = t; y < w / 2 - t + wall; y++) {
-      const roof = y < w / 2 - t;
-      const left = x < w / 2;
-      const outline = y === t || y === w / 2 - t + wall - 1 || x === 0 || x === w - 1;
-      c.set(cx - w / 2 + x, top + y, outline ? INK : roof ? GOLD[3] : left ? GOLD[2] : GOLD[1]);
+    const t = Math.ceil((x < half ? half - 1 - x : x - half) / 2);
+    for (let y = t; y < half - t + wall; y++) {
+      const roof = y < half - t;
+      const left = x < half;
+      const outline = y === t || y === half - t + wall - 1 || x === 0 || x === w - 1;
+      c.set(cx - half + x, top + y, outline ? INK : roof ? GOLD[3] : left ? GOLD[2] : GOLD[1]);
     }
   }
-  // Two lit windows on each wall.
-  for (const [x, y] of [
-    [6, 14],
-    [9, 15],
-    [15, 15],
-    [18, 14],
-  ] as const)
-    c.rect(cx - w / 2 + x, top + y, 1, 2, x < w / 2 ? GOLD[0] : "fbb954");
+  // Windows: one column on each wall, a row every 4 pixels, following the slope.
+  for (let row = half + 2; row < half + wall - 4; row += 4)
+    for (const x of [Math.floor(half / 2), w - 1 - Math.floor(half / 2)]) {
+      const t = Math.ceil((x < half ? half - 1 - x : x - half) / 2);
+      c.rect(cx - half + x, top + row - t + 1, 1, 2, x < half ? GOLD[0] : "fbb954");
+    }
 }
 
+/** Gem colors set in the medallion's ring, each dark, base, light. */
+const GEMS: [Hex, Hex, Hex][] = [
+  ["ae2334", "e83b3b", "f68181"],
+  ["0b8a8f", "30e1b9", "8ff8e2"],
+  ["4d65b4", "4d9be6", "8fd3ff"],
+  ["f79617", "f9c22b", "fbff86"],
+  ["239063", "1ebc73", "91db69"],
+  ["c32454", "f04f78", "ed8099"],
+  ["9e4539", "fb6b1d", "fbb954"],
+  ["7f708a", "c7dcd0", "ffffff"],
+];
+
 /**
- * The closed book: a leather board with gold corners, a gold frame, a title
- * plate (the title itself is HTML) and the emblem. The spine is on the left.
+ * The cover's round medallion: a gold rim, a ring set with gems, and a small
+ * skyline of gold towers in the middle, the city's emblem.
+ */
+function medallion(c: Canvas, cx: number, cy: number) {
+  const R = 40;
+  for (let y = cy - R; y <= cy + R; y++)
+    for (let x = cx - R; x <= cx + R; x++) {
+      const dx = x + 0.5 - cx;
+      const dy = y + 0.5 - cy;
+      const d = Math.hypot(dx, dy);
+      if (d > R) continue;
+      const upperLeft = dx + dy < 0;
+      let color: Hex;
+      if (d > R - 1.2) color = INK;
+      else if (d > R - 3.6) color = upperLeft ? GOLD[3] : GOLD[1];
+      else if (d > R - 4.6) color = INK;
+      else if (d > 25.4) color = upperLeft ? LEATHER[2] : (x + y) % 2 ? LEATHER[2] : LEATHER[1];
+      else if (d > 24.4) color = INK;
+      else if (d > 22.6) color = upperLeft ? GOLD[2] : GOLD[1];
+      else color = d > 21.6 ? LEATHER[0] : INK;
+      c.set(x, y, color);
+    }
+  // Gems around the ring, each a small diamond with a glint.
+  GEMS.forEach(([dark, base, light], i) => {
+    const a = (i / GEMS.length) * Math.PI * 2 - Math.PI / 2;
+    const gx = Math.round(cx - 0.5 + Math.cos(a) * 30.5);
+    const gy = Math.round(cy - 0.5 + Math.sin(a) * 30.5);
+    for (let j = -4; j <= 4; j++)
+      for (let i2 = -4; i2 <= 4; i2++) {
+        const m = Math.abs(i2) + Math.abs(j);
+        if (m > 4) continue;
+        const color = m === 4 ? INK : i2 + j < 0 ? light : i2 + j > 1 ? dark : base;
+        c.set(gx + i2, gy + j, color);
+      }
+    c.set(gx - 1, gy - 1, "ffffff");
+  });
+  // The skyline: a tall tower behind two short ones.
+  tower(c, cx, cy - 19, 14, 20);
+  tower(c, cx - 10, cy - 3, 12, 10);
+  tower(c, cx + 10, cy - 1, 12, 8);
+}
+
+/** An iron corner plate: a quarter disc with rivets, mirrored to any corner. */
+function cornerPlate(c: Canvas, x0: number, y0: number, fx: 1 | -1, fy: 1 | -1) {
+  const R = 22;
+  for (let j = 0; j < R; j++)
+    for (let i = 0; i < R; i++) {
+      const d = Math.hypot(i + 0.5, j + 0.5);
+      if (d > R) continue;
+      let color: Hex = IRON[2];
+      if (d > R - 1.2 || i === 0 || j === 0) color = INK;
+      else if (d > R - 3) color = IRON[1];
+      else if (i === 1 || j === 1) color = IRON[3];
+      c.set(x0 + fx * i, y0 + fy * j, color);
+    }
+  for (const [i, j] of [
+    [5, 5],
+    [14, 4],
+    [4, 14],
+  ] as const) {
+    c.set(x0 + fx * i, y0 + fy * j, INK);
+    c.set(x0 + fx * (i + 1), y0 + fy * j, IRON[3]);
+    c.set(x0 + fx * i, y0 + fy * (j + 1), IRON[1]);
+  }
+}
+
+/** Board size on the cover; the rest shows the edges of the pages. */
+const FRONT_W = BOARD_W - 8;
+const FRONT_H = BOARD_H - 8;
+
+/**
+ * The closed book, cartoon style: a purple board with iron corners and a gem
+ * medallion, over a thick block of pages and the back board. The title and
+ * subtitle are HTML. The spine is on the left.
  */
 function bookCover(): Canvas {
   const c = new Canvas(BOARD_W, BOARD_H);
-  leather(c, 0, 0, BOARD_W, BOARD_H, "cover");
-  // Spine: darker leather with two gold bands.
-  for (let y = 2; y < BOARD_H - 2; y++)
-    for (let x = 1; x < 6; x++) {
-      const band = (y >= 22 && y <= 24) || (y >= BOARD_H - 25 && y <= BOARD_H - 23);
-      c.set(x, y, band ? (y % 2 ? GOLD[2] : GOLD[1]) : x === 5 ? LEATHER[0] : LEATHER[1]);
+  // The back board, and the block of pages between it and the front board.
+  leather(c, 3, 3, BOARD_W - 3, BOARD_H - 3, "back");
+  for (let y = 4; y < BOARD_H - 3; y++)
+    for (let x = 4; x < BOARD_W - 3; x++) {
+      const right = x >= FRONT_W;
+      const line = right ? (x - FRONT_W) % 2 === 1 : (y - FRONT_H) % 2 === 1;
+      const rim = x === BOARD_W - 4 || y === BOARD_H - 4;
+      c.set(x, y, rim ? PAPER[1] : line ? PAPER[2] : PAPER[4]);
     }
-  // Gold frame line.
-  for (let x = 12; x < BOARD_W - 8; x++) {
-    c.set(x, 8, GOLD[2]);
-    c.set(x, BOARD_H - 9, GOLD[1]);
-  }
-  for (let y = 8; y < BOARD_H - 8; y++) {
-    c.set(12, y, GOLD[2]);
-    c.set(BOARD_W - 9, y, GOLD[1]);
-  }
-  // Gold corner protectors on the open side.
-  for (let j = 0; j < 12; j++)
-    for (let i = 0; i < 12 - j; i++) {
-      const rim = i === 11 - j || j === 0 || i === 0;
-      const color = rim ? INK : i + j < 5 ? GOLD[3] : GOLD[2];
-      c.set(BOARD_W - 1 - i, j, j === 0 || i === 0 ? INK : color);
-      c.set(BOARD_W - 1 - i, BOARD_H - 1 - j, j === 0 || i === 0 ? INK : rim ? INK : GOLD[1]);
+  leather(c, 0, 0, FRONT_W, FRONT_H, "cover");
+  // Spine: a darker strip with raised bands.
+  for (let y = 3; y < FRONT_H - 3; y++)
+    for (let x = 1; x < 8; x++) {
+      const band = [18, 52, 96, 130].some((b) => y >= b && y < b + 5);
+      let color: Hex = x === 7 ? INK : LEATHER[0];
+      if (band && x < 7) color = y % 5 === 0 || x === 1 ? LEATHER[2] : LEATHER[1];
+      c.set(x, y, color);
     }
-  // Title plate: parchment in a gold frame.
-  const px = 20;
-  const py = 38;
-  const pw = BOARD_W - 36;
-  const ph = 40;
-  for (let y = py; y < py + ph; y++)
-    for (let x = px; x < px + pw; x++) {
-      const { d, side } = edge(x - px, y - py, pw, ph);
-      if (cornerCut(x - px, y - py, pw, ph, 1)) continue;
-      c.set(
-        x,
-        y,
-        d === 0 ? INK : d === 1 ? (lit(side) ? GOLD[3] : GOLD[1]) : d === 2 ? GOLD[0] : PAPER[4],
-      );
-    }
-  emblem(c, BOARD_W / 2 + 2, 96);
-  // Clasp: a strap with a gold buckle on the open edge.
-  for (let y = 74; y < 90; y++)
-    for (let x = BOARD_W - 12; x < BOARD_W; x++) {
-      const rim = y === 74 || y === 89 || x === BOARD_W - 12;
-      const buckle = x >= BOARD_W - 9 && x <= BOARD_W - 4 && y >= 77 && y <= 86;
-      c.set(
-        x,
-        y,
-        rim ? INK : buckle ? (y === 77 || x === BOARD_W - 9 ? GOLD[3] : GOLD[2]) : LEATHER[1],
-      );
-    }
+  // A few scuffs on the leather.
+  for (const [x, y, n] of [
+    [86, 132, 6],
+    [90, 130, 5],
+    [22, 118, 4],
+    [96, 22, 4],
+  ] as const)
+    for (let k = 0; k < n; k++) c.set(x + k, y - Math.floor(k / 2), LEATHER[2]);
+  cornerPlate(c, 0, 0, 1, 1);
+  cornerPlate(c, FRONT_W - 1, 0, -1, 1);
+  cornerPlate(c, 0, FRONT_H - 1, 1, -1);
+  cornerPlate(c, FRONT_W - 1, FRONT_H - 1, -1, -1);
+  medallion(c, Math.round(FRONT_W / 2) + 4, 82);
   return c;
 }
+
+/** Ribbon colors, dark and light. */
+const RIBBONS: [Hex, Hex][] = [
+  [CLOTH[1], CLOTH[2]],
+  ["fb6b1d", "fbb954"],
+  ["239063", "1ebc73"],
+];
 
 /**
  * The open book: both boards, a stack of page edges, two pages that dip into
@@ -450,14 +521,17 @@ function bookOpen(): Canvas {
       if (x === 6 || x === BOOK_W - 7 || y === 4 || y === 149) color = PAPER[1];
       c.set(x, y, color);
     }
-  // Ribbon bookmark hanging from the bottom of the right page.
-  for (let y = 146; y < BOOK_H; y++)
-    for (let x = spine + 10; x < spine + 15; x++) {
-      const notch = y >= BOOK_H - 2 && x === spine + 12;
-      if (notch) continue;
-      const rim = x === spine + 10 || x === spine + 14 || y === BOOK_H - 1;
-      c.set(x, y, rim ? INK : x === spine + 11 ? CLOTH[2] : CLOTH[1]);
-    }
+  // Three ribbon bookmarks hanging below the right page.
+  RIBBONS.forEach(([dark, light], i) => {
+    const x0 = spine + 14 + i * 9;
+    const end = BOOK_H - 1 - (i % 2) * 2;
+    for (let y = 146; y <= end; y++)
+      for (let x = x0; x < x0 + 5; x++) {
+        if (y >= end - 1 && x === x0 + 2) continue;
+        const rim = x === x0 || x === x0 + 4 || y === end;
+        c.set(x, y, rim ? INK : x === x0 + 1 ? light : dark);
+      }
+  });
   return c;
 }
 

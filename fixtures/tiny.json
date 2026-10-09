@@ -1,0 +1,30 @@
+{
+  "owner": "tiny-dev",
+  "snapshotAt": "2026-10-01T00:00:00Z",
+  "repos": [
+    {
+      "id": "R_tiny-dev_001",
+      "name": "micro-api",
+      "description": "Synthetic micro api project",
+      "createdAt": "2025-06-10T09:24:41Z",
+      "pushedAt": "2026-09-10T02:04:56Z",
+      "primaryLanguage": "PHP",
+      "stars": 6,
+      "commitCount": 24,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_tiny-dev_002",
+      "name": "open-kit",
+      "description": null,
+      "createdAt": "2024-06-03T04:25:10Z",
+      "pushedAt": "2024-07-30T00:45:58Z",
+      "primaryLanguage": "Ruby",
+      "stars": 7,
+      "commitCount": 4,
+      "isFork": false,
+      "isArchived": false
+    }
+  ]
+}

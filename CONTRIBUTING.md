@@ -22,6 +22,7 @@ This guide explains **how the project is organized**, **how to contribute**, and
 10. [Decision making and governance](#10-decision-making-and-governance)
 11. [Licensing](#11-licensing)
 12. [Development setup](#12-development-setup)
+13. [Using AI tools](#13-using-ai-tools)
 
 ---
 
@@ -303,6 +304,65 @@ Code in `src/core` must stay pure ([ADR 0001](./docs/decisions/0001-separate-gen
 - imports of React, Next.js, or PixiJS;
 - imports from higher layers (`src/renderer`, `src/ui`, `src/app`, `src/data`);
 - `Math.random` and `Date.now`.
+
+## 13. Using AI tools
+
+You may use AI tools (Claude Code, Cursor, Codex, Copilot, ChatGPT and others) for code, docs and art. The rules are the same as for any contribution, plus three:
+
+1. **You own what you submit.** Read and understand every line before opening the pull request, run the checks yourself, and be ready to answer review questions without asking the tool.
+2. **Say how AI was used** in the pull request description, in one line: which tool, and for what (for example "Claude Code wrote the first draft of the adapter tests; I reviewed and edited them").
+3. **Art follows [`docs/ART_DIRECTION.md` §14](./docs/ART_DIRECTION.md#14-ai-assisted-art-workflow):** set `"aiAssisted": true` in the manifest, and add the `ai-assisted` label.
+
+Commits are still yours: sign them off with your own name (`git commit -s`). The DCO is a statement by a person, so do not sign off as the tool.
+
+### What the repository gives your AI tool
+
+You do not need to paste the project rules into a prompt. Most AI coding tools read them from the repository:
+
+| File | Read by | What it holds |
+|---|---|---|
+| [`AGENTS.md`](./AGENTS.md) | Codex, Cursor, Copilot, Claude Code (through `CLAUDE.md`) and others | Layers, commands, conventions, where the docs are |
+| [`CLAUDE.md`](./CLAUDE.md) | Claude Code | Imports `AGENTS.md` |
+| [`.claude/skills/isometric-pixel-sprites/`](./.claude/skills/isometric-pixel-sprites/SKILL.md) | Claude Code (other tools: point them at the file) | How to draw sprites in code that pass the art rules |
+
+No MCP server is needed to contribute. MCP connects an AI tool to outside services; if you use one (for example GitHub's), that is your own setup and changes nothing in the rules above.
+
+### Starting prompts
+
+Copy one, replace the parts in brackets, and paste it into your tool from the repository root.
+
+**Pick up an issue**
+
+```text
+Read AGENTS.md and issue #[number] (https://github.com/commitcity/commitcity/issues/[number]).
+Explain the plan and the files you will change before writing code.
+Keep the change to what the issue asks. Add tests for logic in src/core or src/data.
+Run pnpm lint, pnpm typecheck, pnpm test and pnpm format:check, and fix anything they report.
+```
+
+**Fix a bug**
+
+```text
+Read AGENTS.md. Bug: [what happens], expected: [what should happen], steps: [how to reproduce].
+First write a failing test that shows the bug, then fix it with the smallest change.
+Run the checks from AGENTS.md before you finish.
+```
+
+**Draw a building**
+
+```text
+Read AGENTS.md, docs/ART_DIRECTION.md and .claude/skills/isometric-pixel-sprites/SKILL.md.
+Draw a [family] building, footprint [1-4], level [1-3], with default and abandoned variants,
+as a folder in assets/buildings/ with a complete manifest ("aiAssisted": true).
+Run pnpm validate-assets until it passes, then show me screenshots from /dev/city?fixture=large at zoom 1 and 2.
+```
+
+**Review your own branch before opening the pull request**
+
+```text
+Compare this branch with main. List anything that breaks a rule in AGENTS.md or CONTRIBUTING.md,
+any change that is not needed for issue #[number], and any missing test or doc update.
+```
 
 ---
 

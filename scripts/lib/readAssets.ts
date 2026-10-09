@@ -13,6 +13,7 @@ import {
   checkFolderFiles,
   checkSprite,
   checkTile,
+  checkUiImage,
   parseManifest,
   parseTileManifest,
   tileFiles,
@@ -30,9 +31,16 @@ export interface TileAssets {
   sprites: { textureKey: string; image: RgbaImage }[];
 }
 
+/** An interface image from `<root>/ui` (ART_DIRECTION.md §16). */
+export interface UiAsset {
+  file: string;
+  path: string;
+}
+
 export interface AssetReport {
   buildings: BuildingAssets[];
   tiles: TileAssets[];
+  ui: UiAsset[];
   /** Each problem starts with the path it is about, relative to the repository. */
   problems: string[];
 }
@@ -40,12 +48,14 @@ export interface AssetReport {
 /**
  * Reads and validates every building under `<root>/buildings` and every ground,
  * road and vegetation folder, against the palette in
- * `<root>/palette/commitcity.hex`. Only fully valid folders are returned.
+ * `<root>/palette/commitcity.hex`, and every interface image in `<root>/ui`.
+ * Only fully valid folders and images are returned.
  */
 export function readAssets(root: string): AssetReport {
   const palette = parsePalette(readFileSync(join(root, "palette", "commitcity.hex"), "utf8"));
   const buildings: BuildingAssets[] = [];
   const tiles: TileAssets[] = [];
+  const ui: UiAsset[] = [];
   const problems: string[] = [];
   const at = (path: string, message: string) =>
     problems.push(`${relative(process.cwd(), path)}: ${message}`);
@@ -127,5 +137,17 @@ export function readAssets(root: string): AssetReport {
       if (problems.length === before) tiles.push({ manifest, sprites });
     }
   }
-  return { buildings, tiles, problems };
+  const uiDir = join(root, "ui");
+  if (existsSync(uiDir)) {
+    for (const file of readdirSync(uiDir).sort()) {
+      if (!file.endsWith(".png")) continue;
+      const path = join(uiDir, file);
+      const image = readImage(path);
+      if (!image) continue;
+      const imageProblems = checkUiImage(image, palette);
+      imageProblems.forEach((p) => at(path, p));
+      if (imageProblems.length === 0) ui.push({ file, path });
+    }
+  }
+  return { buildings, tiles, ui, problems };
 }

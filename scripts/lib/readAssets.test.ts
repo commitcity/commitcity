@@ -51,7 +51,7 @@ const manifest = (id: string) => ({
 
 describe("readAssets", () => {
   it("is empty when there are no buildings", () => {
-    expect(readAssets(assetsDir())).toEqual({ buildings: [], tiles: [], problems: [] });
+    expect(readAssets(assetsDir())).toEqual({ buildings: [], tiles: [], ui: [], problems: [] });
   });
 
   it("returns valid buildings with their decoded sprites", () => {
@@ -113,5 +113,18 @@ describe("readAssets", () => {
     ]);
     expect(tiles[1]!.sprites[15]!.textureKey).toBe("road/15");
     expect(tiles[2]!.sprites[0]!.textureKey).toBe("decoration/tree/0");
+  });
+
+  it("reads interface images and reports the invalid ones", () => {
+    const root = assetsDir();
+    mkdirSync(join(root, "ui"));
+    writeFileSync(join(root, "ui", "panel.png"), sprite());
+    const odd = new PNG({ width: 2, height: 2 });
+    odd.data.fill(128);
+    writeFileSync(join(root, "ui", "broken.png"), PNG.sync.write(odd));
+    const { ui, problems } = readAssets(root);
+    expect(ui.map((u) => u.file)).toEqual(["panel.png"]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("broken.png: semi-transparent pixel");
   });
 });

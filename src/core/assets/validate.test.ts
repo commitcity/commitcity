@@ -4,6 +4,7 @@ import {
   type RgbaImage,
   checkFolderFiles,
   checkSprite,
+  checkUiImage,
   parseManifest,
   parsePalette,
   spriteFiles,
@@ -174,5 +175,26 @@ describe("checkSprite", () => {
   it("rejects an empty sprite", () => {
     const empty = { width: 32, height: 20, data: new Uint8Array(32 * 20 * 4) };
     expect(checkSprite(empty, 1, palette)).toEqual(["the sprite is empty"]);
+  });
+});
+
+describe("checkUiImage", () => {
+  const image = (pixel: number[]): RgbaImage => {
+    const data = new Uint8Array(5 * 3 * 4);
+    data.set(pixel, 4 * 7);
+    return { width: 5, height: 3, data };
+  };
+
+  it("accepts any size with palette colors and hard alpha", () => {
+    expect(checkUiImage(image([...ROOF, 255]), palette)).toEqual([]);
+  });
+
+  it("rejects semi-transparent pixels and colors outside the palette", () => {
+    expect(checkUiImage(image([...ROOF, 128]), palette)[0]).toContain("semi-transparent");
+    expect(checkUiImage(image([1, 2, 3, 255]), palette)[0]).toContain("#010203");
+  });
+
+  it("rejects an empty image", () => {
+    expect(checkUiImage(image([0, 0, 0, 0]), palette)).toEqual(["the image is empty"]);
   });
 });

@@ -318,7 +318,24 @@ A reviewer checks every new asset against this list:
 - [ ] Manifest present and complete (authors, license, `aiAssisted`).
 - [ ] Looks right next to existing assets at 1× and 2×.
 
-## 16. Decisions recorded in this document
+## 16. Interface art
+
+Menus, panels, buttons and cursors share the city's palette and hard pixels, in a warm medieval style: wood, parchment, iron, gold and red cloth.
+
+| Rule | Value |
+|---|---|
+| Source | `assets/ui/*.png`, drawn by `scripts/art/ui.ts` (`pnpm art`). Licensed like every asset (CC BY-SA 4.0). |
+| Colors | Palette colors only, hard alpha. `pnpm validate-assets` checks it. |
+| Scale | Drawn at 1x and shown at whole multiples: 2 CSS px per art pixel (`--px`), 3 on wide screens. |
+| Nine-slice | Panels: 24 × 24, slice 8. Buttons and text field: 18 × 18, slice 6. Banner: 48 × 20, slice 4 14 8 14. Edges must look right when repeated or stretched along their length. |
+| Buttons | Three images: idle, hover (one ramp step lighter) and pressed (2 px lower, no lip). |
+| Cursors | 16 × 16 drawn, written at 2x (32 × 32), since browsers show cursor images at their CSS size. Pointer hotspot at the fingertip. |
+| Font | [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) (SIL Open Font License), loaded with `next/font`. |
+| Accessibility | Pieces are styles on real `<button>`, `<input>` and `<a>` elements, so keyboard and screen readers keep working. Every image has a CSS fallback cursor. |
+
+`/dev/ui` shows every piece. The CSS lives in `src/app/ui.css`; a page opts in with the `ui` class.
+
+## 17. Decisions recorded in this document
 
 | Decision | Status |
 |---|---|
@@ -336,7 +353,7 @@ A reviewer checks every new asset against this list:
 | Road auto-tiling with 16 shapes | Proposal |
 | Lights overlay for night | Proposal (later) |
 
-## 17. Open questions
+## 18. Open questions
 
 1. Is 32 × 16 detailed enough for buildings to be recognizable, or do we need 64 × 32? *(Answered: 32 × 16, Milestone 1.1.)*
 2. Which palette do we adopt, and does it have enough material ramps (brick, glass, concrete, vegetation)? *(Answered: Resurrect 64, milestone 4.1.)*

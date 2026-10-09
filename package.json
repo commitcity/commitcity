@@ -23,7 +23,7 @@
     "validate-assets": "tsx scripts/validate-assets.ts",
     "pack-assets": "tsx scripts/pack-assets.ts",
     "record-github": "tsx scripts/record-github.ts",
-    "art": "tsx scripts/art/terrain.ts && tsx scripts/art/buildings.ts && prettier --write assets --log-level warn"
+    "art": "tsx scripts/art/terrain.ts && tsx scripts/art/buildings.ts && tsx scripts/art/ui.ts && prettier --write assets --log-level warn"
   },
   "dependencies": {
     "next": "16.4.0",

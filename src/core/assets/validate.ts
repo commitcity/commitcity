@@ -271,6 +271,35 @@ export function checkFlatTile(image: RgbaImage, palette: ReadonlySet<number>): s
   return Object.values(issues).flatMap((issue) => issue.report());
 }
 
+/**
+ * Checks an interface image (panel, button, cursor; ART_DIRECTION.md §16): any
+ * size, but hard alpha and palette colors like every other asset.
+ */
+export function checkUiImage(image: RgbaImage, palette: ReadonlySet<number>): string[] {
+  const { width, height, data } = image;
+  const issues = {
+    alpha: new Issue("semi-transparent pixel", "use fully opaque or fully transparent pixels"),
+    color: new Issue("color not in the palette", "use only assets/palette/commitcity.hex"),
+  };
+  let empty = true;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const alpha = data[i + 3]!;
+      if (alpha === 0) continue;
+      empty = false;
+      if (alpha !== 255) {
+        issues.alpha.add(x, y, `alpha ${alpha}`);
+        continue;
+      }
+      const rgb = (data[i]! << 16) | (data[i + 1]! << 8) | data[i + 2]!;
+      if (!palette.has(rgb)) issues.color.add(x, y, `#${rgb.toString(16).padStart(6, "0")}`);
+    }
+  }
+  const problems = Object.values(issues).flatMap((issue) => issue.report());
+  return empty ? ["the image is empty", ...problems] : problems;
+}
+
 /** First row of a 2:1 diamond of `width` in column `x` (ART_DIRECTION.md §2). */
 export function diamondTop(x: number, width: number): number {
   const half = width / 2;

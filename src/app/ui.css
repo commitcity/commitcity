@@ -1,0 +1,210 @@
+/*
+ * Game interface kit (ART_DIRECTION.md §16). Opt in with `.ui` on a container;
+ * the pieces are nine-slice images from assets/ui, scaled by whole pixels.
+ */
+.ui {
+  /* One art pixel, in CSS pixels. */
+  --px: 2px;
+  --ink: #2e222f;
+  --paper: #fdcbb0;
+  --paper-ink: #45293f;
+  --gold: #f9c22b;
+  font-family: var(--font-pixel), ui-monospace, monospace;
+  font-size: 16px;
+  line-height: 1.25;
+  image-rendering: pixelated;
+  cursor:
+    url("/generated/ui/cursor-glove.png") 9 1,
+    auto;
+}
+
+.ui :is(a, button, select, summary, label[for]) {
+  cursor:
+    url("/generated/ui/cursor-glove.png") 9 1,
+    pointer;
+}
+
+.ui :is(a, button, summary):active {
+  cursor:
+    url("/generated/ui/cursor-glove-press.png") 9 5,
+    pointer;
+}
+
+.ui input {
+  cursor: text;
+}
+
+.ui .grabbing,
+.ui .grabbing * {
+  cursor:
+    url("/generated/ui/cursor-fist.png") 16 16,
+    grabbing;
+}
+
+/* Panels */
+.ui-panel,
+.ui-parchment {
+  border-style: solid;
+  border-width: calc(8 * var(--px));
+  padding: calc(2 * var(--px));
+}
+
+.ui-panel {
+  border-image: url("/generated/ui/panel-wood.png") 8 fill / calc(8 * var(--px)) repeat;
+  color: var(--paper);
+  text-shadow: 0 var(--px) 0 var(--ink);
+}
+
+.ui-parchment {
+  border-image: url("/generated/ui/panel-parchment.png") 8 fill / calc(8 * var(--px)) repeat;
+  color: var(--paper-ink);
+}
+
+/* Buttons: the face moves down 2 art pixels while pressed. */
+.ui-button {
+  --skin: url("/generated/ui/button-wood.png");
+  --skin-hover: url("/generated/ui/button-wood-hover.png");
+  --skin-pressed: url("/generated/ui/button-wood-pressed.png");
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(3 * var(--px));
+  min-width: calc(18 * var(--px));
+  margin: 0;
+  padding: 0 calc(2 * var(--px)) calc(2 * var(--px));
+  font: inherit;
+  color: var(--paper);
+  text-decoration: none;
+  text-shadow: 0 var(--px) 0 var(--ink);
+  background: none;
+  border-style: solid;
+  border-width: calc(6 * var(--px));
+  border-image: var(--skin) 6 fill / calc(6 * var(--px)) stretch;
+}
+
+.ui-button:hover {
+  border-image-source: var(--skin-hover);
+}
+
+.ui-button:active {
+  padding-top: calc(2 * var(--px));
+  padding-bottom: 0;
+  border-image-source: var(--skin-pressed);
+}
+
+.ui-button:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+
+.ui-button:disabled {
+  filter: grayscale(1) brightness(0.8);
+}
+
+.ui-button--gold {
+  --skin: url("/generated/ui/button-gold.png");
+  --skin-hover: url("/generated/ui/button-gold-hover.png");
+  --skin-pressed: url("/generated/ui/button-gold-pressed.png");
+  color: var(--paper-ink);
+  text-shadow: none;
+}
+
+/* A square button holding one symbol. */
+.ui-button--icon {
+  width: calc(18 * var(--px));
+  height: calc(18 * var(--px));
+  padding-left: 0;
+  padding-right: 0;
+  font-size: 20px;
+}
+
+/* Text field */
+.ui-field {
+  min-width: 0;
+  padding: 0 calc(2 * var(--px));
+  font: inherit;
+  color: var(--paper-ink);
+  background: none;
+  border-style: solid;
+  border-width: calc(6 * var(--px));
+  border-image: url("/generated/ui/field.png") 6 fill / calc(6 * var(--px)) stretch;
+  outline: none;
+}
+
+.ui-field::placeholder {
+  color: #966c6c;
+}
+
+.ui-field:focus {
+  border-image-source: url("/generated/ui/field-focus.png");
+}
+
+/* Banner: a title on a red cloth ribbon. */
+.ui-banner {
+  display: inline-block;
+  margin: 0;
+  padding: 0 calc(2 * var(--px));
+  font-size: 20px;
+  font-weight: normal;
+  line-height: calc(8 * var(--px));
+  color: var(--paper);
+  text-shadow: 0 var(--px) 0 var(--ink);
+  border-style: solid;
+  border-width: calc(4 * var(--px)) calc(14 * var(--px)) calc(8 * var(--px));
+  border-image: url("/generated/ui/banner-red.png") 4 14 8 fill / calc(4 * var(--px))
+    calc(14 * var(--px)) calc(8 * var(--px)) stretch;
+}
+
+@media (min-width: 900px) {
+  .ui--large {
+    --px: 3px;
+  }
+}
+
+/* /dev/ui gallery */
+.ui-gallery {
+  display: grid;
+  gap: 24px;
+  justify-items: start;
+  max-width: 760px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.ui-gallery h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: normal;
+}
+
+.ui-gallery p {
+  margin: 0 0 12px;
+}
+
+.ui-gallery section {
+  width: 100%;
+}
+
+.ui-gallery-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.ui-gallery figure {
+  margin: 0;
+  text-align: center;
+}
+
+.ui-gallery img {
+  image-rendering: pixelated;
+}
+
+.ui-gallery-drag {
+  margin-top: 12px;
+  padding: 16px;
+  text-align: center;
+  border: var(--px) dashed var(--paper);
+}

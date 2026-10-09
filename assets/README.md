@@ -5,6 +5,7 @@ Source artwork. Follow [`docs/ART_DIRECTION.md`](../docs/ART_DIRECTION.md). Lice
 ```
 assets/
   palette/        the 64 project colors (.hex, .gpl); see palette/README.md
+  ui/             interface images: panels, buttons, cursors (ART_DIRECTION.md §16)
   buildings/
     <id>/         one folder per building, named like its manifest id
       manifest.json

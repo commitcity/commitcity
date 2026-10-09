@@ -1,0 +1,7 @@
+{
+  "id": "weeds",
+  "kind": "vegetation",
+  "authors": ["CommitCity contributors"],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

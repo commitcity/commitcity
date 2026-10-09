@@ -64,16 +64,18 @@ export class AtlasTextures {
     this.source?.destroy(true);
   }
 
-  /** Building keys map to a frame by manifest, nearest view and variant; levels share one drawing. */
+  /**
+   * Building keys map to a frame by manifest, nearest view and variant (levels
+   * share one drawing); ground, road and decoration keys are frame keys already.
+   */
   private frame(textureKey: string) {
     const building = parseBuildingKey(textureKey);
-    const manifest = building && this.manifests.get(building.manifestId);
-    if (!building || !manifest) return undefined;
-    const key = frameKey(
-      manifest.id,
-      resolveView(manifest, building.view),
-      building.variant as never,
-    );
+    let key = textureKey;
+    if (building) {
+      const manifest = this.manifests.get(building.manifestId);
+      if (!manifest) return undefined;
+      key = frameKey(manifest.id, resolveView(manifest, building.view), building.variant as never);
+    }
     const frame = this.assets.packed.frames[key];
     return frame && { key, ...frame };
   }

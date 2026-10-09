@@ -1,4 +1,5 @@
 import type { BuildingManifest, Variant, View } from "./manifest";
+import type { TileManifest } from "./tiles";
 
 // The packed form of the artist assets that the app loads: one atlas image plus
 // this JSON (ARCHITECTURE.md §9). Written by `pnpm pack-assets`.
@@ -14,12 +15,14 @@ export interface PackedAssets {
   /** Image path relative to the catalog file. */
   image: string;
   buildings: BuildingManifest[];
-  /** Keyed by `frameKey`. */
+  /** Ground, road and vegetation folders. */
+  tiles: TileManifest[];
+  /** Buildings keyed by `frameKey`; tiles keyed by their render-list texture key. */
   frames: Record<string, AtlasFrame>;
 }
 
 export function frameKey(manifestId: string, view: View, variant: Variant): string {
-  return `${manifestId}/view-${view}/${variant}`;
+  return `building/${manifestId}/view-${view}/${variant}`;
 }
 
 /**

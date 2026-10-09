@@ -21,7 +21,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate-assets": "tsx scripts/validate-assets.ts",
-    "pack-assets": "tsx scripts/pack-assets.ts"
+    "pack-assets": "tsx scripts/pack-assets.ts",
+    "art": "tsx scripts/art/terrain.ts && tsx scripts/art/buildings.ts && prettier --write assets --log-level warn"
   },
   "dependencies": {
     "next": "16.4.0",

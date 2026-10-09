@@ -9,16 +9,19 @@ import { readAssets } from "./lib/readAssets";
 
 const root = process.argv[2] ?? "assets";
 const out = join("public", "generated", "assets");
-const { buildings, problems } = readAssets(root);
+const { buildings, tiles, problems } = readAssets(root);
 
 if (problems.length > 0) {
   console.error(`✗ Not packing: ${problems.length} asset problem(s). Run pnpm validate-assets.`);
   process.exit(1);
 }
 
-const sprites = buildings.flatMap(({ manifest, sprites }) =>
-  sprites.map((s) => ({ key: frameKey(manifest.id, s.view, s.variant), image: s.image })),
-);
+const sprites = [
+  ...buildings.flatMap(({ manifest, sprites }) =>
+    sprites.map((s) => ({ key: frameKey(manifest.id, s.view, s.variant), image: s.image })),
+  ),
+  ...tiles.flatMap(({ sprites }) => sprites.map((s) => ({ key: s.textureKey, image: s.image }))),
+];
 const { positions, width, height } = packShelves(sprites.map((s) => s.image));
 
 rmSync(out, { recursive: true, force: true });
@@ -27,6 +30,7 @@ const frames: Record<string, AtlasFrame> = {};
 const catalog: PackedAssets = {
   image: "atlas.png",
   buildings: buildings.map((b) => b.manifest),
+  tiles: tiles.map((t) => t.manifest),
   frames,
 };
 
@@ -47,4 +51,6 @@ if (sprites.length > 0) {
   writeFileSync(join(out, "atlas.png"), PNG.sync.write(atlas));
 }
 writeFileSync(join(out, "catalog.json"), JSON.stringify(catalog, null, 2) + "\n");
-console.log(`✓ Packed ${sprites.length} sprites from ${buildings.length} buildings into ${out}`);
+console.log(
+  `✓ Packed ${sprites.length} sprites from ${buildings.length} buildings and ${tiles.length} tile sets into ${out}`,
+);

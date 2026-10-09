@@ -16,13 +16,14 @@ function assetsDir(): string {
   return dir;
 }
 
-/** A footprint-1 box in palette colors, 32 × 24. */
-function sprite(): Buffer {
-  const png = new PNG({ width: 32, height: 24 });
+/** A footprint-1 box (height 24) or a flat tile (height 16) in a palette color. */
+function sprite(height = 24): Buffer {
+  const png = new PNG({ width: 32, height });
   png.data.fill(0);
   for (let x = 0; x < 32; x++) {
     const top = Math.ceil((x < 16 ? 15 - x : x - 16) / 2);
-    for (let y = top; y < 24 - top; y++) png.data.set([0x62, 0x55, 0x65, 255], (y * 32 + x) * 4);
+    for (let y = top; y < height - top; y++)
+      png.data.set([0x62, 0x55, 0x65, 255], (y * 32 + x) * 4);
   }
   return PNG.sync.write(png);
 }
@@ -50,7 +51,7 @@ const manifest = (id: string) => ({
 
 describe("readAssets", () => {
   it("is empty when there are no buildings", () => {
-    expect(readAssets(assetsDir())).toEqual({ buildings: [], problems: [] });
+    expect(readAssets(assetsDir())).toEqual({ buildings: [], tiles: [], problems: [] });
   });
 
   it("returns valid buildings with their decoded sprites", () => {
@@ -76,5 +77,41 @@ describe("readAssets", () => {
     expect(problems[0]).toMatch(/bad-json\/manifest\.json: not valid JSON/);
     expect(problems[1]).toMatch(/empty: manifest\.json is missing$/);
     expect(problems[2]).toMatch(/no-sprite: view-0\.png is missing/);
+  });
+
+  it("reads ground, road and vegetation folders with their texture keys", () => {
+    const root = assetsDir();
+    const tileManifest = (id: string, kind: string) => ({
+      id,
+      kind,
+      authors: ["Test"],
+      license: "CC-BY-SA-4.0",
+      aiAssisted: false,
+    });
+    const write = (folder: string, id: string, kind: string, files: string[], height: number) => {
+      const dir = join(root, folder, id);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, "manifest.json"), JSON.stringify(tileManifest(id, kind)));
+      for (const file of files) writeFileSync(join(dir, file), sprite(height));
+    };
+    const range = (n: number, name: string) =>
+      Array.from({ length: n }, (_, i) => `${name}-${i}.png`);
+    write("ground", "grass", "ground", range(4, "variant"), 16);
+    write("roads", "street", "road", range(16, "mask"), 16);
+    write("vegetation", "tree", "vegetation", range(3, "variant"), 24);
+    write("vegetation", "cactus", "vegetation", range(3, "variant"), 24);
+
+    const { tiles, problems } = readAssets(root);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/cactus\/manifest\.json: vegetation folders must be named one of/);
+    expect(tiles.map((t) => t.manifest.id)).toEqual(["grass", "street", "tree"]);
+    expect(tiles[0]!.sprites.map((s) => s.textureKey)).toEqual([
+      "ground/grass/0",
+      "ground/grass/1",
+      "ground/grass/2",
+      "ground/grass/3",
+    ]);
+    expect(tiles[1]!.sprites[15]!.textureKey).toBe("road/15");
+    expect(tiles[2]!.sprites[0]!.textureKey).toBe("decoration/tree/0");
   });
 });

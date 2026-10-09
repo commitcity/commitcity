@@ -1,6 +1,6 @@
 # 0003. PixiJS as the renderer, used imperatively
 
-- **Status:** Proposed — to be validated by Milestone 1.1 (isometric rendering spike)
+- **Status:** Accepted on 2026-10-09 after Milestone 1.1 ([report](../reports/milestone-1.1-rendering-spike.md)). The phone measurement is still pending (#10).
 - **Date:** 2026-10-08
 - **Related:** [`ARCHITECTURE.md` §2, §7](../ARCHITECTURE.md), [`ROADMAP.md` Milestone 1.1](../ROADMAP.md)
 

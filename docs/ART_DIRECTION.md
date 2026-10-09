@@ -48,12 +48,12 @@ screenY = (x + y) * (TILE_HEIGHT / 2)
 
 | Item | Specification | Status |
 |---|---|---|
-| Base tile size | **32 × 16 px** diamond (width × height). | Proposal |
+| Base tile size | **32 × 16 px** diamond (width × height). | Confirmed |
 | Diamond shape | Drawn inside a 32 × 16 box; top and bottom vertices are 2 px wide, left and right vertices are 1 px tall, following the 2:1 step. | Rule |
 | Height unit | Heights are measured in pixels above the tile surface. One building storey ≈ **8 px**. | Guideline |
 | Rendering scale | Assets are authored at **1×** and displayed at integer zoom levels (1×, 2×, 3×, 4×). The default view is expected to be 2× or 3×. | Rule |
 
-**Why 32 × 16 (and not 64 × 32)?** A 32 × 16 tile matches the dense, small-scale look of the reference and keeps the art effort per building low, which matters for a project without a dedicated artist yet. 64 × 32 allows more detail but roughly quadruples the pixels per building. The first technical milestone will render both sizes with placeholder art before this is locked.
+**Why 32 × 16 (and not 64 × 32)?** A 32 × 16 tile matches the dense, small-scale look of the reference and keeps the art effort per building low, which matters for a project without a dedicated artist yet. 64 × 32 allows more detail but roughly quadruples the pixels per building. Milestone 1.1 rendered both sizes with placeholder art, and 32 × 16 was confirmed on 2026-10-09 ([report](reports/milestone-1.1-rendering-spike.md)).
 
 ## 4. Sprite specification
 
@@ -302,7 +302,7 @@ A reviewer checks every new asset against this list:
 | No mirroring for buildings; one redrawn sprite per view | Confirmed |
 | Only view `0` required in current scope | Confirmed |
 | AI-assisted art allowed with disclosure, treated as replaceable | Confirmed |
-| Base tile size 32 × 16 | Proposal — validate in first milestone |
+| Base tile size 32 × 16 | Confirmed (Milestone 1.1) |
 | Starting palette (for example Resurrect 64) | Proposal — license to be checked |
 | Building families, levels 1–3, `annex` rule | Proposal |
 | Road auto-tiling with 16 shapes | Proposal |
@@ -310,7 +310,7 @@ A reviewer checks every new asset against this list:
 
 ## 17. Open questions
 
-1. Is 32 × 16 detailed enough for buildings to be recognizable, or do we need 64 × 32? *(Answered by the first milestone.)*
+1. Is 32 × 16 detailed enough for buildings to be recognizable, or do we need 64 × 32? *(Answered: 32 × 16, Milestone 1.1.)*
 2. Which palette do we adopt, and does it have enough material ramps (brick, glass, concrete, vegetation)?
 3. How many building types are needed for a city to feel varied? Initial guess: 2–3 per family and footprint.
 4. Do pixel-art-specific AI tools produce consistent enough results to be worth using, compared with drawing simple buildings by hand?

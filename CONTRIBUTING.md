@@ -281,6 +281,8 @@ pnpm dev
 
 Open http://localhost:3000.
 
+The fixture cities at `/dev/city` need nothing else. To load real GitHub data, copy `.env.example` to `.env.local` and set `GITHUB_TOKEN` to a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) with no extra permissions. Then `/dev/github/<login>` returns that account's `CityInput` as JSON. Tests never need a token: they replay recorded responses from `fixtures/github/`.
+
 ### Commands
 
 | Command | What it does |

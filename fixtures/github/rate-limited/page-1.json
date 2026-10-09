@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "0",
+    "x-ratelimit-reset": "1791583600",
+    "x-ratelimit-used": "10",
+    "x-ratelimit-resource": "graphql"
+  },
+  "body": {
+    "errors": [
+      {
+        "type": "RATE_LIMITED",
+        "code": "graphql_rate_limit",
+        "message": "API rate limit exceeded for user ID 1. If you reach out to GitHub Support for help, please include the request ID 0000:0000:0000000:0000000:00000000."
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4990",
+    "x-ratelimit-reset": "1791580000",
+    "x-ratelimit-used": "10",
+    "x-ratelimit-resource": "graphql"
+  },
+  "body": {
+    "data": {
+      "repositoryOwner": {
+        "login": "Octo-Dev",
+        "repositories": {
+          "totalCount": 1,
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "Y3Vyc29yOnYyOpHOAAAAAQ=="
+          },
+          "nodes": [
+            {
+              "id": "R_kgDOH00001",
+              "name": "monorepo",
+              "description": "The monorepo project",
+              "createdAt": "2021-04-01T00:00:00Z",
+              "pushedAt": "2021-04-01T00:00:00Z",
+              "primaryLanguage": {
+                "name": "TypeScript"
+              },
+              "stargazerCount": 3000,
+              "isFork": false,
+              "isArchived": false,
+              "defaultBranchRef": {
+                "target": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    "errors": [
+      {
+        "message": "Something went wrong while executing your query. This may be the result of a timeout, or it could be a GitHub bug.",
+        "path": [
+          "repositoryOwner",
+          "repositories",
+          "nodes",
+          0,
+          "defaultBranchRef",
+          "target",
+          "history"
+        ]
+      }
+    ]
+  }
+}

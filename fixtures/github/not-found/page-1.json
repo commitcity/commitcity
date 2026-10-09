@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4990",
+    "x-ratelimit-reset": "1791580000",
+    "x-ratelimit-used": "10",
+    "x-ratelimit-resource": "graphql"
+  },
+  "body": {
+    "data": {
+      "repositoryOwner": null
+    }
+  }
+}

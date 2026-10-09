@@ -25,7 +25,7 @@ Each decision is marked as **Confirmed**, **Proposal** (to be validated, usually
 | Technology | Verdict | Reasoning | Status |
 |---|---|---|---|
 | **TypeScript** (strict) | Keep | Shared types between generation, rendering, and UI; essential for contributors. | Confirmed |
-| **Next.js (App Router)** | Keep | Public city pages need server rendering, caching, and social preview images; it deploys natively to Vercel's free tier. The renderer itself runs only on the client. | Confirmed |
+| **Next.js (App Router)** | Keep | Public city pages need server rendering, caching, and social preview images; it deploys natively to Vercel's free tier. The renderer itself runs only on the client. `cacheComponents` and `partialPrefetching` are on (milestone 5.1), so caching uses `use cache` (§10); pages that read the query string render it inside `<Suspense>`. | Confirmed |
 | **PixiJS v8** | Keep | Mature WebGL/WebGPU 2D sprite renderer with batching, texture atlases, and nearest-neighbor scaling. Fits a sprite-based isometric city. | Confirmed — Milestone 1.1 (phone measurement pending, #10) |
 | **@pixi/react** | Defer | Declaring thousands of sprites as React elements adds reconciliation overhead and makes sorting and culling harder to control. Proposal: PixiJS used imperatively inside one client component; React is used for UI only. Can be revisited. | Proposal |
 | **Tailwind CSS** | Keep (UI only) | Fast, consistent styling for panels and pages. Never used inside the canvas. | Confirmed |
@@ -33,7 +33,7 @@ Each decision is marked as **Confirmed**, **Proposal** (to be validated, usually
 | **Vitest** | Keep | Fast unit tests; generation is pure, so it is highly testable. | Confirmed |
 | **tsx**, **pngjs** (dev only) | Keep | `tsx` runs the asset scripts in TypeScript with the same `@/` imports as `src/core`, so the rules are shared, not copied. `pngjs` reads and writes PNGs in Node with no native build step. | Confirmed (milestone 4.1) |
 | **PostgreSQL** | Defer | No requirement yet. Public pages can be served from cached API results. It may become necessary for timelapse history or rate-limit protection. | Confirmed (deferred) |
-| **GitHub API** | Later phase | Fixtures first; the API adapter comes after rendering and generation are proven. GraphQL preferred (see §10). | Confirmed |
+| **GitHub API** | Keep | GraphQL, server side only (§10). | Confirmed (milestone 5.1) |
 | **Package manager** | pnpm | Fast, strict dependency resolution, common in open-source projects. | Proposal |
 
 ### Alternatives considered for rendering
@@ -395,15 +395,19 @@ Generation may later move to a Web Worker if it exceeds the performance budget; 
 4. The app fetches the catalog and atlas at runtime and decodes the atlas once, for both textures and hit masks. A building key resolves to a frame by manifest, nearest available view (`resolveView`) and variant; every level of a manifest uses the same drawing. Keys without a frame fall back to code-drawn placeholders, which stay in the catalog until real art covers every family and footprint (milestone 4.2).
 5. `catalogVersion` (a hash of all manifests) is recorded in each `CityModel`.
 
-## 10. GitHub data (later phase)
+## 10. GitHub data
+
+The adapter lives in `src/data/github` (milestone 5.1). `fetchCityInput(login, options)` takes `fetch` and a clock as options, so it is tested offline against the recorded responses in `fixtures/github/`. `getCityInput(login)` adds the cache and reads the token; it is what pages call.
 
 | Topic | Approach | Status |
 |---|---|---|
-| API | GitHub GraphQL API: one paginated query returns repositories with stars, languages, dates, and fork/archive flags (100 per page). | Proposal |
-| Commit counts | Available per repository through the default branch history `totalCount`, but expensive in query cost. Fetch in batches, or replace with a cheaper activity signal if limits are hit. | Open |
-| Authentication | Server-side requests with a project token stored in environment variables. Never in the client. | Confirmed |
-| Rate limits | Authenticated requests have an hourly budget (GraphQL is measured in points). Every user lookup must be cached. | Confirmed |
-| Caching | Cache the normalized `CityInput` per user with a revalidation period (for example 24 hours), using the hosting platform's data cache. No database. | Proposal |
+| API | GitHub GraphQL API: one query on `repositoryOwner`, so users and organizations both work. It returns public repositories the owner owns, oldest first, 100 per page, with stars, primary language, dates, fork and archive flags. A lookup stops after 1,000 repositories; generation handles large accounts (§6.7). | Confirmed |
+| Owner | `CityInput.owner` is the login as GitHub spells it, so every spelling of a login gives the same city seed. | Confirmed |
+| Commit counts | Fetched in the same query through the default branch `history.totalCount`. Empty repositories, branches that point at a tag, and counts that time out (an error next to the data) give `null`. If large accounts make pages slow, drop the field or fetch it separately. | Confirmed (watch) |
+| Errors | Every failure is a typed result, never an exception: `invalid-login` (checked before any request), `not-found`, `rate-limited` (with the reset time from the headers), `unauthorized` (token missing or wrong), `unavailable` (network, server error, unexpected data). | Confirmed |
+| Authentication | Server-side requests with a project token in `GITHUB_TOKEN` (`.env.example`). Never in the client. | Confirmed |
+| Rate limits | Authenticated requests have an hourly budget (GraphQL is measured in points). Every user lookup is cached. | Confirmed |
+| Caching | `getCityInput` is a `use cache: remote` function, so the hosting platform's cache is shared across server instances; locally it falls back to memory. The cache key is the login in lower case. A city is refreshed in the background after a day (`cacheLife("days")`); a missing user is looked up again after an hour; rate limits and outages are kept for seconds only. Each entry is tagged `github:<login>` for `revalidateTag`. No database. | Confirmed |
 | Timelapse history | Placement only needs `createdAt`, which is cheap. Showing *how buildings grew* over time needs historical activity, which is expensive to fetch and may be the first real reason to add persistence. | Open |
 | Abuse protection | Limit lookups per IP and only allow existing GitHub users. | Later |
 

@@ -1,0 +1,9 @@
+{
+  "status": 502,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "message": "Server Error"
+  }
+}

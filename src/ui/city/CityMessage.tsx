@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BackdropCity } from "@/ui/home/BackdropCity";
 
-/** Full-page message in place of a city: loading, empty, or an error. */
+/** Full-page message in place of a city: loading, empty, or an error, on a nailed note. */
 export function CityMessage({
   title,
   children,
@@ -13,13 +14,22 @@ export function CityMessage({
   retryHref?: string;
 }) {
   return (
-    <main className="message">
-      <h1>{title}</h1>
-      {children && <p>{children}</p>}
-      <nav>
-        {retryHref && <a href={retryHref}>Try again</a>}
-        <Link href="/">Build another city</Link>
-      </nav>
+    <main className="message ui ui--large">
+      <BackdropCity />
+      <div className="message-note ui-note ui-parchment">
+        <h1>{title}</h1>
+        {children && <p>{children}</p>}
+        <nav>
+          {retryHref && (
+            <a href={retryHref} className="ui-button">
+              Try again
+            </a>
+          )}
+          <Link href="/" className="ui-button ui-button--gold">
+            Build another city
+          </Link>
+        </nav>
+      </div>
     </main>
   );
 }

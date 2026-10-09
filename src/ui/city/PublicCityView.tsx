@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { type PointerEvent, useEffect, useRef, useState } from "react";
 import type { CityInput } from "@/core/model";
 import type { Orientation } from "@/core/view";
 import { InfoPanel } from "./InfoPanel";
@@ -29,45 +29,77 @@ export function PublicCityView({ input, initial }: { input: CityInput; initial: 
 
   const rotate = (step: number) => setOrientation((o) => ((o + step + 4) % 4) as Orientation);
 
+  // The tooltip follows the pointer without re-rendering the page.
+  const tipRef = useRef<HTMLDivElement>(null);
+  const cityRef = useRef<HTMLDivElement>(null);
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    tipRef.current?.style.setProperty("--x", `${e.clientX}px`);
+    tipRef.current?.style.setProperty("--y", `${e.clientY}px`);
+  };
+  // A press on the city itself grabs it: the cursor becomes a fist until release.
+  const grab = (on: boolean) => cityRef.current?.classList.toggle("grabbing", on);
+
   return (
-    <div className="city">
+    <div
+      ref={cityRef}
+      className="city ui"
+      onPointerMove={onPointerMove}
+      onPointerDown={(e) => grab(e.target instanceof HTMLCanvasElement)}
+      onPointerUp={() => grab(false)}
+      onPointerCancel={() => grab(false)}
+    >
       <div ref={hostRef} className="city-canvas" />
-      <header className="city-bar">
-        <Link href="/" className="brand">
+      <header className="city-bar ui-panel">
+        <Link href="/" className="city-brand">
           CommitCity
         </Link>
         <h1>
           <a href={`https://github.com/${encodeURIComponent(input.owner)}`}>{input.owner}</a>
         </h1>
-        <span className="city-meta">
+        <p className="city-meta">
           {buildingCount} {buildingCount === 1 ? "building" : "buildings"} ·{" "}
           <Updated at={input.snapshotAt} />
-        </span>
-        <span className="city-controls">
-          <button onClick={() => rotate(-1)} aria-label="Rotate left (Q)">
-            ⟲
-          </button>
-          <button onClick={() => rotate(1)} aria-label="Rotate right (E)">
-            ⟳
-          </button>
-          <button onClick={() => setZoom(zoom - 1)} aria-label="Zoom out (-)">
-            −
-          </button>
-          <button onClick={() => setZoom(zoom + 1)} aria-label="Zoom in (+)">
-            +
-          </button>
-        </span>
-        <span className="city-hint" aria-live="polite">
-          {hovered ? hovered.name : "Drag to move · click a building"}
-        </span>
+        </p>
+        <p className="city-hint">Drag to move · click a building</p>
       </header>
+      <nav className="city-controls ui-panel" aria-label="View">
+        <IconButton icon="rotate-left" label="Rotate left (Q)" onClick={() => rotate(-1)} />
+        <IconButton icon="rotate-right" label="Rotate right (E)" onClick={() => rotate(1)} />
+        <IconButton icon="minus" label="Zoom out (-)" onClick={() => setZoom(zoom - 1)} />
+        <IconButton icon="plus" label="Zoom in (+)" onClick={() => setZoom(zoom + 1)} />
+      </nav>
+      <div ref={tipRef} className="city-tip ui-parchment" hidden={!hovered} aria-live="polite">
+        {hovered?.name}
+      </div>
       {input.repos.length === 0 && (
-        <p className="city-empty">
+        <p className="city-empty ui-note ui-parchment">
           {input.owner} has no public repositories yet, so the city is still an empty field.
         </p>
       )}
       {selected && <InfoPanel owner={input.owner} repo={selected} onClose={() => select(null)} />}
     </div>
+  );
+}
+
+function IconButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="ui-button ui-button--icon"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
+      <span className={`ui-icon ui-icon--${icon}`} aria-hidden="true" />
+    </button>
   );
 }
 

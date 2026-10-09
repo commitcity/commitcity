@@ -46,7 +46,10 @@ export function CityView({ initial }: { initial: CityParams }) {
   }, [fixture, orientation, selected]);
 
   return (
-    <div style={{ position: "fixed", inset: 0, fontFamily: "monospace", fontSize: 13 }}>
+    <div
+      className="ui"
+      style={{ position: "fixed", inset: 0, fontFamily: "monospace", fontSize: 13 }}
+    >
       <div ref={hostRef} style={{ position: "absolute", inset: 0 }} />
       <div
         data-testid="city-controls"

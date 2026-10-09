@@ -12,12 +12,20 @@ import { type LoadedAssets, loadAssets } from "@/renderer/city/loadAssets";
 const CATALOG_URL = "/generated/assets/catalog.json";
 /** Keyboard pan step, in CSS pixels. */
 const PAN_STEP = 64;
+/** Backdrop drift: how far the camera wanders from its start, in CSS pixels, and how slowly. */
+const DRIFT_RADIUS = 96;
+const DRIFT_PERIOD_MS = 60_000;
 
 export interface CityStart {
   orientation: Orientation;
   zoom: number | null;
   /** Name of the repository to select and center on. */
   repo: string | null;
+  /**
+   * A backdrop city: no keyboard controls, and the camera drifts slowly unless
+   * the viewer prefers reduced motion. Pointer input is left to the page's CSS.
+   */
+  passive?: boolean;
 }
 
 export interface City {
@@ -40,6 +48,7 @@ export interface City {
  * State lives here; the camera lives in the renderer (ARCHITECTURE.md §8).
  */
 export function useCity(input: CityInput, start: CityStart): City {
+  const passive = start.passive ?? false;
   const hostRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<CityRenderer | null>(null);
   const [ready, setReady] = useState(false);
@@ -131,6 +140,7 @@ export function useCity(input: CityInput, start: CityStart): City {
   }, [ready, selected]);
 
   useEffect(() => {
+    if (passive) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
@@ -167,7 +177,26 @@ export function useCity(input: CityInput, start: CityStart): City {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [model, selected]);
+  }, [model, selected, passive]);
+
+  useEffect(() => {
+    if (!passive || !ready) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // The camera follows a slow ellipse; pans are whole pixels, so keep the remainder.
+    let frame = 0;
+    let shown = { x: 0, y: 0 };
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const angle = ((now - t0) / DRIFT_PERIOD_MS) * 2 * Math.PI;
+      const x = Math.round(DRIFT_RADIUS * Math.sin(angle));
+      const y = Math.round((DRIFT_RADIUS / 2) * Math.sin(2 * angle));
+      if (x !== shown.x || y !== shown.y) rendererRef.current?.panBy(x - shown.x, y - shown.y);
+      shown = { x, y };
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [passive, ready]);
 
   useEffect(() => {
     const id = window.setInterval(() => {

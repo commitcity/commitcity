@@ -2,7 +2,7 @@
 // Nine-slice images are drawn at 1x; CSS scales them by whole pixels. Run: pnpm art
 import { mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { Canvas, type Hex } from "./kit";
+import { Canvas, type Hex, noise } from "./kit";
 
 const OUT = join("assets", "ui");
 
@@ -316,7 +316,241 @@ function cursor(rows: readonly string[]): Canvas {
   return c;
 }
 
+/** Purple leather for the book, darkest first. */
+const LEATHER = ["45293f", "6b3e75", "905ea9", "a884f3"] as const;
+
+/** Book sizes, in art pixels: the open spread, and one board (the closed cover). */
+const BOOK_W = 248;
+const BOOK_H = 168;
+const BOARD_W = BOOK_W / 2;
+const BOARD_H = 160;
+
+/** Leather with a sparse grain, a lit top-left rim and a dark bottom-right rim. */
+function leather(c: Canvas, x0: number, y0: number, w: number, h: number, seed: string) {
+  for (let y = y0; y < y0 + h; y++)
+    for (let x = x0; x < x0 + w; x++) {
+      const { d, side } = edge(x - x0, y - y0, w, h);
+      if (cornerCut(x - x0, y - y0, w, h, 3)) continue;
+      let color: Hex = LEATHER[1];
+      if (d === 0) color = INK;
+      else if (d === 1) color = lit(side) ? LEATHER[2] : LEATHER[0];
+      else if (noise(seed, x, y) < 0.03) color = LEATHER[0];
+      else if (noise(seed, "hi", x, y) < 0.012) color = LEATHER[2];
+      c.set(x, y, color);
+    }
+}
+
+/**
+ * A small isometric building: a 2:1 diamond roof over two walls, with rows of
+ * lit windows. `top` is the roof's top pixel.
+ */
+function tower(c: Canvas, cx: number, top: number, w: number, wall: number) {
+  const half = w / 2;
+  for (let x = 0; x < w; x++) {
+    const t = Math.ceil((x < half ? half - 1 - x : x - half) / 2);
+    for (let y = t; y < half - t + wall; y++) {
+      const roof = y < half - t;
+      const left = x < half;
+      const outline = y === t || y === half - t + wall - 1 || x === 0 || x === w - 1;
+      c.set(cx - half + x, top + y, outline ? INK : roof ? GOLD[3] : left ? GOLD[2] : GOLD[1]);
+    }
+  }
+  // Windows: one column on each wall, a row every 4 pixels, following the slope.
+  for (let row = half + 2; row < half + wall - 4; row += 4)
+    for (const x of [Math.floor(half / 2), w - 1 - Math.floor(half / 2)]) {
+      const t = Math.ceil((x < half ? half - 1 - x : x - half) / 2);
+      c.rect(cx - half + x, top + row - t + 1, 1, 2, x < half ? GOLD[0] : "fbb954");
+    }
+}
+
+/** Gem colors set in the medallion's ring, each dark, base, light. */
+const GEMS: [Hex, Hex, Hex][] = [
+  ["ae2334", "e83b3b", "f68181"],
+  ["0b8a8f", "30e1b9", "8ff8e2"],
+  ["4d65b4", "4d9be6", "8fd3ff"],
+  ["f79617", "f9c22b", "fbff86"],
+  ["239063", "1ebc73", "91db69"],
+  ["c32454", "f04f78", "ed8099"],
+  ["9e4539", "fb6b1d", "fbb954"],
+  ["7f708a", "c7dcd0", "ffffff"],
+];
+
+/**
+ * The cover's round medallion: a gold rim, a ring set with gems, and a small
+ * skyline of gold towers in the middle, the city's emblem.
+ */
+function medallion(c: Canvas, cx: number, cy: number) {
+  const R = 40;
+  for (let y = cy - R; y <= cy + R; y++)
+    for (let x = cx - R; x <= cx + R; x++) {
+      const dx = x + 0.5 - cx;
+      const dy = y + 0.5 - cy;
+      const d = Math.hypot(dx, dy);
+      if (d > R) continue;
+      const upperLeft = dx + dy < 0;
+      let color: Hex;
+      if (d > R - 1.2) color = INK;
+      else if (d > R - 3.6) color = upperLeft ? GOLD[3] : GOLD[1];
+      else if (d > R - 4.6) color = INK;
+      else if (d > 25.4) color = upperLeft ? LEATHER[2] : (x + y) % 2 ? LEATHER[2] : LEATHER[1];
+      else if (d > 24.4) color = INK;
+      else if (d > 22.6) color = upperLeft ? GOLD[2] : GOLD[1];
+      else color = d > 21.6 ? LEATHER[0] : INK;
+      c.set(x, y, color);
+    }
+  // Gems around the ring, each a small diamond with a glint.
+  GEMS.forEach(([dark, base, light], i) => {
+    const a = (i / GEMS.length) * Math.PI * 2 - Math.PI / 2;
+    const gx = Math.round(cx - 0.5 + Math.cos(a) * 30.5);
+    const gy = Math.round(cy - 0.5 + Math.sin(a) * 30.5);
+    for (let j = -4; j <= 4; j++)
+      for (let i2 = -4; i2 <= 4; i2++) {
+        const m = Math.abs(i2) + Math.abs(j);
+        if (m > 4) continue;
+        const color = m === 4 ? INK : i2 + j < 0 ? light : i2 + j > 1 ? dark : base;
+        c.set(gx + i2, gy + j, color);
+      }
+    c.set(gx - 1, gy - 1, "ffffff");
+  });
+  // The skyline: a tall tower behind two short ones.
+  tower(c, cx, cy - 19, 14, 20);
+  tower(c, cx - 10, cy - 3, 12, 10);
+  tower(c, cx + 10, cy - 1, 12, 8);
+}
+
+/** An iron corner plate: a quarter disc with rivets, mirrored to any corner. */
+function cornerPlate(c: Canvas, x0: number, y0: number, fx: 1 | -1, fy: 1 | -1) {
+  const R = 22;
+  for (let j = 0; j < R; j++)
+    for (let i = 0; i < R; i++) {
+      const d = Math.hypot(i + 0.5, j + 0.5);
+      if (d > R) continue;
+      let color: Hex = IRON[2];
+      if (d > R - 1.2 || i === 0 || j === 0) color = INK;
+      else if (d > R - 3) color = IRON[1];
+      else if (i === 1 || j === 1) color = IRON[3];
+      c.set(x0 + fx * i, y0 + fy * j, color);
+    }
+  for (const [i, j] of [
+    [5, 5],
+    [14, 4],
+    [4, 14],
+  ] as const) {
+    c.set(x0 + fx * i, y0 + fy * j, INK);
+    c.set(x0 + fx * (i + 1), y0 + fy * j, IRON[3]);
+    c.set(x0 + fx * i, y0 + fy * (j + 1), IRON[1]);
+  }
+}
+
+/** Board size on the cover; the rest shows the edges of the pages. */
+const FRONT_W = BOARD_W - 8;
+const FRONT_H = BOARD_H - 8;
+
+/**
+ * The closed book, cartoon style: a purple board with iron corners and a gem
+ * medallion, over a thick block of pages and the back board. The title and
+ * subtitle are HTML. The spine is on the left.
+ */
+function bookCover(): Canvas {
+  const c = new Canvas(BOARD_W, BOARD_H);
+  // The back board, and the block of pages between it and the front board.
+  leather(c, 3, 3, BOARD_W - 3, BOARD_H - 3, "back");
+  for (let y = 4; y < BOARD_H - 3; y++)
+    for (let x = 4; x < BOARD_W - 3; x++) {
+      const right = x >= FRONT_W;
+      const line = right ? (x - FRONT_W) % 2 === 1 : (y - FRONT_H) % 2 === 1;
+      const rim = x === BOARD_W - 4 || y === BOARD_H - 4;
+      c.set(x, y, rim ? PAPER[1] : line ? PAPER[2] : PAPER[4]);
+    }
+  leather(c, 0, 0, FRONT_W, FRONT_H, "cover");
+  // Spine: a darker strip with raised bands.
+  for (let y = 3; y < FRONT_H - 3; y++)
+    for (let x = 1; x < 8; x++) {
+      const band = [18, 52, 96, 130].some((b) => y >= b && y < b + 5);
+      let color: Hex = x === 7 ? INK : LEATHER[0];
+      if (band && x < 7) color = y % 5 === 0 || x === 1 ? LEATHER[2] : LEATHER[1];
+      c.set(x, y, color);
+    }
+  // A few scuffs on the leather.
+  for (const [x, y, n] of [
+    [86, 132, 6],
+    [90, 130, 5],
+    [22, 118, 4],
+    [96, 22, 4],
+  ] as const)
+    for (let k = 0; k < n; k++) c.set(x + k, y - Math.floor(k / 2), LEATHER[2]);
+  cornerPlate(c, 0, 0, 1, 1);
+  cornerPlate(c, FRONT_W - 1, 0, -1, 1);
+  cornerPlate(c, 0, FRONT_H - 1, 1, -1);
+  cornerPlate(c, FRONT_W - 1, FRONT_H - 1, -1, -1);
+  medallion(c, Math.round(FRONT_W / 2) + 4, 82);
+  return c;
+}
+
+/** Ribbon colors, dark and light. */
+const RIBBONS: [Hex, Hex][] = [
+  [CLOTH[1], CLOTH[2]],
+  ["fb6b1d", "fbb954"],
+  ["239063", "1ebc73"],
+];
+
+/**
+ * The open book: both boards, a stack of page edges, two pages that dip into
+ * the gutter, and a ribbon. The spine is at x = 124.
+ */
+function bookOpen(): Canvas {
+  const c = new Canvas(BOOK_W, BOOK_H);
+  leather(c, 0, 0, BOOK_W, BOARD_H, "open");
+  const spine = BOOK_W / 2;
+  // Page edges under the top pages, seen along the bottom and the outer sides.
+  const edges = [PAPER[0], PAPER[2], PAPER[4], PAPER[2]];
+  edges.forEach((color, i) => {
+    const k = 3 - i;
+    for (let y = 4; y < 150 + k; y++)
+      for (let x = 6 - k; x < BOOK_W - 6 + k; x++) c.set(x, y, color);
+  });
+  // The top pages: shading toward the gutter, a crease at the spine.
+  for (let y = 4; y < 150; y++)
+    for (let x = 6; x < BOOK_W - 6; x++) {
+      const gutter = Math.abs(x + 0.5 - spine);
+      let color: Hex = PAPER[4];
+      if (gutter < 1) color = PAPER[1];
+      else if (gutter < 3) color = PAPER[2];
+      else if (gutter < 7) color = (x + y) % 2 ? PAPER[3] : PAPER[4];
+      else if (gutter < 12 && (x + y) % 4 === 0) color = PAPER[3];
+      if (x === 6 || x === BOOK_W - 7 || y === 4 || y === 149) color = PAPER[1];
+      c.set(x, y, color);
+    }
+  // Three ribbon bookmarks hanging below the right page.
+  RIBBONS.forEach(([dark, light], i) => {
+    const x0 = spine + 14 + i * 9;
+    const end = BOOK_H - 1 - (i % 2) * 2;
+    for (let y = 146; y <= end; y++)
+      for (let x = x0; x < x0 + 5; x++) {
+        if (y >= end - 1 && x === x0 + 2) continue;
+        const rim = x === x0 || x === x0 + 4 || y === end;
+        c.set(x, y, rim ? INK : x === x0 + 1 ? light : dark);
+      }
+  });
+  return c;
+}
+
+/** One half of the open book, the back of the cover while it turns. */
+function bookHalf(open: Canvas, right: boolean): Canvas {
+  const c = new Canvas(BOARD_W, BOARD_H);
+  for (let y = 0; y < BOARD_H; y++)
+    for (let x = 0; x < BOARD_W; x++) {
+      const color = open.get(x + (right ? BOARD_W : 0), y);
+      if (color) c.set(x, y, color);
+    }
+  return c;
+}
+
+const open = bookOpen();
 const files: Record<string, Canvas> = {
+  "book-open.png": open,
+  "book-cover.png": bookCover(),
+  "book-left.png": bookHalf(open, false),
   "panel-wood.png": woodPanel(),
   "panel-parchment.png": parchmentPanel(),
   "field.png": textField(false),

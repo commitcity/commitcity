@@ -189,15 +189,30 @@ interface ViewState {
 
 interface RenderItem {
   layer: "ground" | "road" | "object";
-  textureKey: string;          // e.g. "brick-office-small/view-0"
+  textureKey: string;          // see the key formats below
   screenX: number;             // integer pixels at 1x
-  screenY: number;
-  depth: number;               // sort key within the layer
-  pickId?: string;             // repoId for hit testing
+  screenY: number;             // tiles: top vertex; objects: footprint front vertex
+  depth: number;               // draw order within the layer
+  pickId?: string;             // repoId for hit testing (buildings only)
+}
+
+interface RenderList {
+  ground: RenderItem[];        // sorted by view (y, x)
+  roads: RenderItem[];         // sorted by view (y, x)
+  objects: RenderItem[];       // buildings and decorations, topologically sorted (§7.2)
 }
 ```
 
-## 5. Determinism
+`buildRenderList(model, orientation, tile)` in `src/core/view/renderList.ts` is pure: the same model and orientation always give the same list. **Confirmed** (milestone 3.1). Texture keys:
+
+| Item | Key | Notes |
+|---|---|---|
+| Ground | `ground/<kind>/<variant>` | |
+| Road | `road/<mask>` | Neighbor mask in view space: 1 = +x, 2 = +y, 4 = −x, 8 = −y. |
+| Building | `building/<manifestId>/view-<v>/<variant>/level-<n>` | `v = rotateSide(facing, orientation)`. |
+| Decoration | `decoration/<kind>/<variant>` | |
+
+
 
 | Rule | Status |
 |---|---|
@@ -288,7 +303,7 @@ All thresholds are **proposals** to be tuned with real data.
 
 ### 6.6 Roads, ground, and decoration
 
-- Roads surround every block that contains at least one occupied lot. Road shapes (straight, corner, T, crossing) are **not** stored; the view layer derives them from neighbors, so they stay correct under rotation. **Proposal.**
+- Roads surround every block that contains at least one occupied lot. Road shapes (straight, corner, T, crossing) are **not** stored; the view layer derives them from neighbors, so they stay correct under rotation. **Confirmed** (milestone 3.1): each road tile gets a 4-bit mask of its view-space neighbors, which picks one of 16 textures.
 - Ground fills the city bounds plus a 2-tile margin, with variants from a position-based hash (`hash(seed, x, y)`), so ground never depends on repository order. Lots of archived repositories are dirt.
 - Decoration is placed only on free tiles of an occupied lot, from that repository's `decoration` stream. Every lot tile draws its numbers whether or not the building covers it, so a building growing never reshuffles the rest of its lot's decoration.
 
@@ -319,7 +334,8 @@ The renderer receives a `RenderList` and keeps PixiJS objects in sync with it.
 
 | Container | Contents | Notes |
 |---|---|---|
-| `groundLayer` | Ground and road tiles | Static; rebuilt only on orientation change. Can be cached into chunked render textures. |
+| `groundLayer` | Ground tiles | Static; rebuilt only on orientation change. Can be cached into chunked render textures. |
+| `roadLayer` | Road tiles | Same as ground, drawn above it. |
 | `objectLayer` | Buildings and decorations | Sorted by `depth`. |
 | `overlayLayer` | Hover and selection outlines | Drawn by code, not by artists. |
 

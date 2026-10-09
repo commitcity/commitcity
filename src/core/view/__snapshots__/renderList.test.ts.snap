@@ -1,0 +1,94 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildRenderList > matches the stored render list of the tiny city in all four orientations 1`] = `
+[
+  {
+    "objects": [
+      "building/placeholder-brick-1/view-3/default/level-1 @0,-48",
+      "decoration/flowers/1 @48,-8",
+      "decoration/tree/0 @32,0",
+      "decoration/tree/1 @64,0",
+      "building/placeholder-brick-1/view-3/default/level-1 @112,8",
+      "decoration/tree/0 @96,16",
+      "decoration/tree/1 @48,24",
+      "decoration/tree/0 @80,24",
+      "decoration/bush/1 @64,32",
+    ],
+    "orientation": 0,
+    "roadShapes": [
+      "road/10",
+      "road/12",
+      "road/3",
+      "road/5",
+      "road/6",
+      "road/9",
+    ],
+  },
+  {
+    "objects": [
+      "building/placeholder-brick-1/view-0/default/level-1 @112,8",
+      "decoration/tree/0 @16,24",
+      "decoration/tree/1 @-32,32",
+      "decoration/flowers/1 @32,32",
+      "decoration/bush/1 @-48,40",
+      "decoration/tree/1 @16,40",
+      "decoration/tree/0 @-32,48",
+      "decoration/tree/0 @-16,56",
+      "building/placeholder-brick-1/view-0/default/level-1 @0,64",
+    ],
+    "orientation": 1,
+    "roadShapes": [
+      "road/10",
+      "road/12",
+      "road/3",
+      "road/5",
+      "road/6",
+      "road/9",
+    ],
+  },
+  {
+    "objects": [
+      "decoration/bush/1 @-64,-16",
+      "decoration/tree/0 @-80,-8",
+      "decoration/tree/1 @-48,-8",
+      "decoration/tree/0 @-96,0",
+      "building/placeholder-brick-1/view-1/default/level-1 @-112,8",
+      "decoration/tree/1 @-64,16",
+      "decoration/tree/0 @-32,16",
+      "decoration/flowers/1 @-48,24",
+      "building/placeholder-brick-1/view-1/default/level-1 @0,64",
+    ],
+    "orientation": 2,
+    "roadShapes": [
+      "road/10",
+      "road/12",
+      "road/3",
+      "road/5",
+      "road/6",
+      "road/9",
+    ],
+  },
+  {
+    "objects": [
+      "building/placeholder-brick-1/view-2/default/level-1 @0,-48",
+      "decoration/tree/0 @16,-40",
+      "decoration/tree/0 @32,-32",
+      "decoration/tree/1 @-16,-24",
+      "decoration/bush/1 @48,-24",
+      "decoration/flowers/1 @-32,-16",
+      "decoration/tree/1 @32,-16",
+      "decoration/tree/0 @-16,-8",
+      "building/placeholder-brick-1/view-2/default/level-1 @-112,8",
+    ],
+    "orientation": 3,
+    "roadShapes": [
+      "road/10",
+      "road/12",
+      "road/3",
+      "road/5",
+      "road/6",
+      "road/9",
+    ],
+  },
+]
+`;

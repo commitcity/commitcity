@@ -246,7 +246,7 @@ The city is a grid of **blocks**. Each block contains **2 × 2 lots**, and each 
 ### 6.3 Placement order: chronological spiral
 
 1. Repositories are sorted by `createdAt`, then `id`.
-2. Lots are enumerated in a fixed **spiral order**: blocks by ring distance from the center (`max(|bx|, |by|)`), then clockwise starting from a fixed direction; within a block, lots in a fixed order.
+2. Lots are enumerated in a fixed **spiral order**: blocks by ring distance from the center (`max(|bx|, |by|)`), then clockwise on screen (at orientation 0) starting from the ring's back corner `(-r, -r)` and moving along +x, +y, -x, -y; within a block, lots go back, right, front, left. Block (0, 0) is centered on the world origin. Implemented in `src/core/generation/spiral.ts`.
 3. The *n*-th repository gets the *n*-th lot.
 
 Result: the oldest repositories form the city center, and the city grows outward like tree rings.

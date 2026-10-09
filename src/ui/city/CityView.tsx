@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PLACEHOLDER_MANIFESTS, createCatalog } from "@/core/assets";
+import { createCatalog, withPlaceholders } from "@/core/assets";
 import { generateCity } from "@/core/generation";
 import { parseCityInput } from "@/core/model";
 import { type Orientation, TILE_32 } from "@/core/view";
@@ -45,7 +45,7 @@ export function CityView({ initial }: { initial: CityParams }) {
   // Undefined while loading; null when no artist assets have been packed.
   const [assets, setAssets] = useState<LoadedAssets | null | undefined>(undefined);
   const catalog = useMemo(
-    () => createCatalog([...PLACEHOLDER_MANIFESTS, ...(assets?.packed.buildings ?? [])]),
+    () => createCatalog(withPlaceholders(assets?.packed.buildings ?? [])),
     [assets],
   );
   const input = useMemo(() => parseCityInput(FIXTURE_DATA[fixture]), [fixture]);

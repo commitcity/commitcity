@@ -1,0 +1,21 @@
+{
+  "id": "brick-large-l2",
+  "family": "brick",
+  "footprint": 3,
+  "levels": [
+    2
+  ],
+  "views": [
+    0
+  ],
+  "symmetric": false,
+  "variants": [
+    "default",
+    "abandoned"
+  ],
+  "authors": [
+    "CommitCity contributors"
+  ],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

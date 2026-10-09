@@ -202,8 +202,17 @@ assets/
       view-0.png
       view-0.abandoned.png
   ground/
+    grass/
+      manifest.json
+      variant-0.png … variant-3.png
   roads/
+    street/
+      manifest.json
+      mask-0.png … mask-15.png
   vegetation/
+    tree/
+      manifest.json
+      variant-0.png … variant-2.png
 ```
 
 Sprite files are named `view-<v>.png` for the `default` variant and `view-<v>.<variant>.png` for the others, for example `view-0.abandoned.png`. One drawing covers every level listed in `levels`; draw a second building folder when a level needs a different look. A symmetric building provides view 0 only. A folder must contain exactly the files its manifest declares. **Rule.**
@@ -225,6 +234,8 @@ Example `manifest.json` (the exact schema is defined in `ARCHITECTURE.md`):
 }
 ```
 
+Ground, roads and vegetation are tile sets: one folder per kind with a manifest (`id`, `kind` (`ground`, `road` or `vegetation`), `authors`, `license`, `aiAssisted`). Ground kinds are `grass`, `dirt` and `pavement`, with `variant-0.png` to `variant-3.png`. A road set has `mask-0.png` to `mask-15.png`, one per neighbor mask (bit 1 = lower-right neighbor, 2 = lower-left, 4 = upper-left, 8 = upper-right). Vegetation kinds are `tree`, `bush`, `flowers`, `weeds` and `dead-tree`, with `variant-0.png` to `variant-2.png`. Ground and road tiles are exactly one 32 × 16 diamond, fully covered; vegetation follows the building canvas rules for a 1×1 footprint and may be as short as the diamond. **Rule.**
+
 ### 12.1 Automatic checks
 
 `pnpm validate-assets` runs in CI on every pull request and lists every problem with the file, the first offending pixel, and what to change. It checks:
@@ -235,13 +246,15 @@ Example `manifest.json` (the exact schema is defined in `ARCHITECTURE.md`):
 - occupancy: nothing drawn below the footprint's lower edges, beyond a 2 px overhang (§4.1);
 - hard alpha and palette colors (§4.3, §6).
 
-`pnpm pack-assets` (run automatically by `pnpm dev` and `pnpm build`) packs valid buildings into an atlas, and the dev city at `/dev/city` uses them right away, next to the placeholders.
+`pnpm pack-assets` (run automatically by `pnpm dev` and `pnpm build`) packs valid buildings and tile sets into an atlas, and the dev city at `/dev/city` uses them right away. A footprint keeps its placeholders until real art covers it in both variants.
 
 ## 13. Placeholder art
 
-Until real art exists, the renderer uses **code-generated placeholders**: simple boxes that follow this document exactly (32 × 16 tiles, 2:1 edges, three-tone face shading, palette colors, correct canvas and anchor). Placeholders let development continue without art and prove that the geometry rules work.
+Until real art exists, the renderer uses **code-generated placeholders**: simple boxes that follow this document exactly (32 × 16 tiles, 2:1 edges, three-tone face shading, palette colors, correct canvas and anchor). Placeholders let development continue without art and prove that the geometry rules work. They remain as the fallback for any texture the atlas lacks.
 
 ## 14. AI-assisted art workflow
+
+The first art set (milestone 4.2) is drawn by code in `scripts/art/` (`pnpm art` regenerates it). An AI assistant wrote those scripts, so every asset they produce sets `"aiAssisted": true`. Hand-drawn replacements are welcome; edit the PNGs directly and stop regenerating that folder.
 
 The project has no pixel artist yet. AI image tools may be used to **draft** assets, under the rules below. AI output is treated as a starting point, never as a finished asset.
 

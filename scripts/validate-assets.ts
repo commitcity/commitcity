@@ -3,7 +3,7 @@
 import { readAssets } from "./lib/readAssets";
 
 const root = process.argv[2] ?? "assets";
-const { buildings, problems } = readAssets(root);
+const { buildings, tiles, problems } = readAssets(root);
 
 if (problems.length > 0) {
   console.error(`✗ ${problems.length} asset problem${problems.length === 1 ? "" : "s"}:\n`);
@@ -11,4 +11,4 @@ if (problems.length > 0) {
   console.error("\nSee docs/ART_DIRECTION.md (§4 sprites, §6 palette, §12 manifest).");
   process.exit(1);
 }
-console.log(`✓ ${buildings.length} building${buildings.length === 1 ? "" : "s"} valid`);
+console.log(`✓ ${buildings.length} buildings and ${tiles.length} tile sets valid`);

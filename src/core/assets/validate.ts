@@ -74,27 +74,11 @@ export function parseManifest(
   value: unknown,
   folder: string,
 ): { manifest: BuildingManifest | null; problems: string[] } {
-  const problems: string[] = [];
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return { manifest: null, problems: ["manifest.json must contain a JSON object"] };
-  }
-  const m = value as Record<string, unknown>;
-  for (const key of MANIFEST_KEYS) {
-    if (!(key in m)) problems.push(`missing field "${key}"`);
-  }
-  for (const key of Object.keys(m)) {
-    if (!(MANIFEST_KEYS as readonly string[]).includes(key))
-      problems.push(`unknown field "${key}" (allowed: ${MANIFEST_KEYS.join(", ")})`);
-  }
+  const fields = checkCommonFields(value, MANIFEST_KEYS, folder);
+  if (!fields.record) return { manifest: null, problems: fields.problems };
+  const { record: m, problems } = fields;
   const has = (key: string) => key in m;
 
-  if (has("id")) {
-    if (typeof m.id !== "string" || !ID_PATTERN.test(m.id))
-      problems.push(`"id" must be lowercase words joined by dashes, like "brick-office-small"`);
-    else if (m.id !== folder) problems.push(`"id" is "${m.id}" but the folder is "${folder}"`);
-    else if (m.id.startsWith("placeholder-"))
-      problems.push(`"id" must not start with "placeholder-" (reserved for code-drawn boxes)`);
-  }
   if (has("family") && !FAMILIES.includes(m.family as never))
     problems.push(`"family" must be one of ${FAMILIES.join(", ")}`);
   if (has("footprint") && ![1, 2, 3, 4].includes(m.footprint as number))
@@ -114,6 +98,46 @@ export function parseManifest(
     else if (!(m.variants as string[]).includes("default"))
       problems.push(`"variants" must include "default"`);
   }
+  if (problems.length > 0) return { manifest: null, problems };
+  const manifest = m as unknown as BuildingManifest;
+  return {
+    manifest: {
+      ...manifest,
+      levels: [...manifest.levels].sort((a, b) => a - b),
+      views: [...manifest.views].sort((a, b) => a - b),
+    },
+    problems,
+  };
+}
+
+/**
+ * Checks what every manifest shares: a JSON object with exactly `keys`, an `id`
+ * equal to its folder, and authors, license and AI disclosure (§12, §14.4).
+ */
+export function checkCommonFields(
+  value: unknown,
+  keys: readonly string[],
+  folder: string,
+): { record: Record<string, unknown> | null; problems: string[] } {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return { record: null, problems: ["manifest.json must contain a JSON object"] };
+  }
+  const m = value as Record<string, unknown>;
+  const problems: string[] = [];
+  for (const key of keys) {
+    if (!(key in m)) problems.push(`missing field "${key}"`);
+  }
+  for (const key of Object.keys(m)) {
+    if (!keys.includes(key)) problems.push(`unknown field "${key}" (allowed: ${keys.join(", ")})`);
+  }
+  const has = (key: string) => key in m;
+  if (has("id")) {
+    if (typeof m.id !== "string" || !ID_PATTERN.test(m.id))
+      problems.push(`"id" must be lowercase words joined by dashes, like "brick-office-small"`);
+    else if (m.id !== folder) problems.push(`"id" is "${m.id}" but the folder is "${folder}"`);
+    else if (m.id.startsWith("placeholder-"))
+      problems.push(`"id" must not start with "placeholder-" (reserved for code-drawn boxes)`);
+  }
   if (
     has("authors") &&
     !(
@@ -127,31 +151,28 @@ export function parseManifest(
     problems.push(`"license" must be "${ASSET_LICENSE}" (see ASSETS_LICENSE)`);
   if (has("aiAssisted") && typeof m.aiAssisted !== "boolean")
     problems.push(`"aiAssisted" must be true or false (ART_DIRECTION.md §14.4)`);
-
-  if (problems.length > 0) return { manifest: null, problems };
-  const manifest = m as unknown as BuildingManifest;
-  return {
-    manifest: {
-      ...manifest,
-      levels: [...manifest.levels].sort((a, b) => a - b),
-      views: [...manifest.views].sort((a, b) => a - b),
-    },
-    problems,
-  };
+  return { record: m, problems };
 }
 
 /** The PNG files a folder must and must not contain, given its manifest. */
 export function checkFolderFiles(manifest: BuildingManifest, files: readonly string[]): string[] {
+  return checkFiles(
+    spriteFiles(manifest).map((s) => s.file),
+    files,
+  );
+}
+
+/** Every expected file must exist; any other file except `manifest.json` is an error. */
+export function checkFiles(expected: readonly string[], files: readonly string[]): string[] {
   const problems: string[] = [];
-  const expected = new Set(spriteFiles(manifest).map((s) => s.file));
   for (const file of expected) {
     if (!files.includes(file)) problems.push(`${file} is missing (the manifest declares it)`);
   }
   for (const file of files) {
     if (file === "manifest.json") continue;
-    if (!expected.has(file))
+    if (!expected.includes(file))
       problems.push(
-        `${file} is not declared by the manifest (expected files: ${[...expected].join(", ")})`,
+        `${file} is not declared by the manifest (expected files: ${expected.join(", ")})`,
       );
   }
   return problems;
@@ -160,17 +181,20 @@ export function checkFolderFiles(manifest: BuildingManifest, files: readonly str
 /**
  * Checks one building sprite: canvas size (§4.2), no drawing below the footprint
  * (§4.1), hard alpha (§4.3) and palette colors (§6). Returns problems, each with
- * the first offending pixel and how many pixels share the problem.
+ * the first offending pixel and how many pixels share the problem. `flat` allows
+ * a sprite no taller than its footprint, for low plants and props.
  */
 export function checkSprite(
   image: RgbaImage,
   footprint: number,
   palette: ReadonlySet<number>,
+  { flat = false }: { flat?: boolean } = {},
 ): string[] {
   const { width, height, data } = image;
   const expectedWidth = footprint * TILE_WIDTH;
   const diamond = footprint * TILE_HEIGHT;
-  if (width !== expectedWidth || height <= diamond || (height - diamond) % HEIGHT_STEP !== 0) {
+  const tooShort = flat ? height < diamond : height <= diamond;
+  if (width !== expectedWidth || tooShort || (height - diamond) % HEIGHT_STEP !== 0) {
     const valid = `${expectedWidth} × (${diamond} + a multiple of ${HEIGHT_STEP})`;
     return [
       `canvas is ${width} × ${height} px; a footprint-${footprint} building must be ${valid}`,
@@ -204,15 +228,51 @@ export function checkSprite(
 
   const problems = Object.values(issues).flatMap((issue) => issue.report());
   if (firstOpaqueRow === height) problems.unshift("the sprite is empty");
-  else if (firstOpaqueRow >= HEIGHT_STEP)
+  else if (firstOpaqueRow >= HEIGHT_STEP && height > diamond)
     problems.push(
       `${firstOpaqueRow} empty rows at the top; crop the canvas so at most ${HEIGHT_STEP - 1} remain`,
     );
   return problems;
 }
 
+/**
+ * Checks a ground or road tile: exactly one 32 × 16 diamond, fully covered so
+ * neighbors meet without gaps, nothing outside it, hard alpha, palette colors.
+ */
+export function checkFlatTile(image: RgbaImage, palette: ReadonlySet<number>): string[] {
+  const { width, height, data } = image;
+  if (width !== TILE_WIDTH || height !== TILE_HEIGHT)
+    return [`canvas is ${width} × ${height} px; tiles must be ${TILE_WIDTH} × ${TILE_HEIGHT}`];
+  const issues = {
+    gap: new Issue("transparent pixel inside the diamond", "fill the whole tile"),
+    outside: new Issue("pixel outside the diamond", "tiles may not draw outside it"),
+    alpha: new Issue("semi-transparent pixel", "use fully opaque or fully transparent pixels"),
+    color: new Issue("color not in the palette", "use only assets/palette/commitcity.hex"),
+  };
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const top = diamondTop(x, width);
+      const inside = y >= top && y < height - top;
+      const i = (y * width + x) * 4;
+      const alpha = data[i + 3]!;
+      if (alpha === 0) {
+        if (inside) issues.gap.add(x, y);
+        continue;
+      }
+      if (!inside) issues.outside.add(x, y);
+      if (alpha !== 255) {
+        issues.alpha.add(x, y, `alpha ${alpha}`);
+        continue;
+      }
+      const rgb = (data[i]! << 16) | (data[i + 1]! << 8) | data[i + 2]!;
+      if (!palette.has(rgb)) issues.color.add(x, y, `#${rgb.toString(16).padStart(6, "0")}`);
+    }
+  }
+  return Object.values(issues).flatMap((issue) => issue.report());
+}
+
 /** First row of a 2:1 diamond of `width` in column `x` (ART_DIRECTION.md §2). */
-function diamondTop(x: number, width: number): number {
+export function diamondTop(x: number, width: number): number {
   const half = width / 2;
   return Math.ceil((x < half ? half - 1 - x : x - half) / 2);
 }

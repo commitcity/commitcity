@@ -1,0 +1,21 @@
+{
+  "id": "brick-block-l1",
+  "family": "brick",
+  "footprint": 4,
+  "levels": [
+    1
+  ],
+  "views": [
+    0
+  ],
+  "symmetric": false,
+  "variants": [
+    "default",
+    "abandoned"
+  ],
+  "authors": [
+    "CommitCity contributors"
+  ],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

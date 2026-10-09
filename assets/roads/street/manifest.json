@@ -1,0 +1,9 @@
+{
+  "id": "street",
+  "kind": "road",
+  "authors": [
+    "CommitCity contributors"
+  ],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

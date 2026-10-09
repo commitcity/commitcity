@@ -1,3 +1,4 @@
+import { DECORATION_VARIANT_COUNT, GROUND_VARIANT_COUNT } from "@/core/assets";
 import type { Building, Decoration, GroundKind, GroundTile, RoadTile } from "@/core/model";
 import { type Random, hash53 } from "@/core/random";
 import { BLOCK_INTERIOR, LOT_SIZE, blockOrigin } from "./layout";
@@ -5,7 +6,6 @@ import type { BlockPosition, Lot } from "./spiral";
 
 /** Margin of ground around the outermost roads, in tiles. */
 export const GROUND_MARGIN = 2;
-const GROUND_VARIANTS = 4;
 
 /** Road tiles around every occupied block, sorted by y, then x (ARCHITECTURE.md §6.6). */
 export function roadsAround(blocks: readonly BlockPosition[]): RoadTile[] {
@@ -46,7 +46,12 @@ export function fillGround(
   for (let y = bounds.minY; y <= bounds.maxY; y++) {
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
       const kind: GroundKind = dirt.has(`${x},${y}`) ? "dirt" : "grass";
-      ground.push({ x, y, kind, variant: hash53(`${owner}:ground:${x},${y}`) % GROUND_VARIANTS });
+      ground.push({
+        x,
+        y,
+        kind,
+        variant: hash53(`${owner}:ground:${x},${y}`) % GROUND_VARIANT_COUNT,
+      });
     }
   }
   return ground;
@@ -68,7 +73,7 @@ export function decorateLot(lot: Lot, building: Building, random: Random): Decor
       // the decoration of the remaining tiles.
       const place = random.chance(DECORATION_CHANCE);
       const kind = random.pick(kinds);
-      const variant = random.int(0, 2);
+      const variant = random.int(0, DECORATION_VARIANT_COUNT - 1);
       const insideBuilding =
         x >= building.origin.x &&
         x < building.origin.x + building.footprint &&

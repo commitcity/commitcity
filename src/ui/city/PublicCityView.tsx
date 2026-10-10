@@ -79,11 +79,11 @@ export function PublicCityView({ input, initial }: { input: CityInput; initial: 
         <IconButton icon="plus" label="Zoom in (+)" onClick={() => setZoom(zoom + 1)} />
         <SoundToggle />
       </nav>
-      <div ref={tipRef} className="city-tip ui-parchment" hidden={!hovered} aria-live="polite">
+      <div ref={tipRef} className="city-tip ui-tip" hidden={!hovered} aria-live="polite">
         {hovered?.name}
       </div>
       {input.repos.length === 0 && (
-        <p className="city-empty ui-note ui-parchment">
+        <p className="city-empty ui-note ui-paper">
           {input.owner} has no public repositories yet, so the city is still an empty field.
         </p>
       )}

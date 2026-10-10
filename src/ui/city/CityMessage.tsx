@@ -16,7 +16,7 @@ export function CityMessage({
   return (
     <main className="message ui ui--large">
       <BackdropCity />
-      <div className="message-note ui-note ui-parchment">
+      <div className="message-note ui-note ui-paper">
         <h1>{title}</h1>
         {children && <p>{children}</p>}
         <nav>

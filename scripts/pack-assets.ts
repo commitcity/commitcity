@@ -1,8 +1,9 @@
 // Validates the assets, then packs every sprite into one atlas for the app:
 // public/generated/assets/{atlas.png,catalog.json} (ARCHITECTURE.md §9). Interface
-// images are copied as they are to public/generated/ui, for CSS to use.
+// images are copied as they are to public/generated/ui, for CSS to use; licensed
+// versions in <assets-dir>/licensed/ui (not committed) replace those of the same name.
 // Usage: pnpm pack-assets [assets-dir]
-import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PNG } from "pngjs";
 import { type AtlasFrame, type PackedAssets, frameKey, packShelves } from "../src/core/assets";
@@ -56,7 +57,12 @@ const uiOut = join("public", "generated", "ui");
 rmSync(uiOut, { recursive: true, force: true });
 mkdirSync(uiOut, { recursive: true });
 for (const { file, path } of ui) copyFileSync(path, join(uiOut, file));
+const licensedUi = join(root, "licensed", "ui");
+const licensed = existsSync(licensedUi)
+  ? readdirSync(licensedUi).filter((f) => ui.some((u) => u.file === f))
+  : [];
+for (const file of licensed) copyFileSync(join(licensedUi, file), join(uiOut, file));
 
 console.log(
-  `✓ Packed ${sprites.length} sprites from ${buildings.length} buildings and ${tiles.length} tile sets into ${out}, and ${ui.length} interface images into ${uiOut}`,
+  `✓ Packed ${sprites.length} sprites from ${buildings.length} buildings and ${tiles.length} tile sets into ${out}, and ${ui.length} interface images into ${uiOut} (${licensed.length} licensed)`,
 );

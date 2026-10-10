@@ -43,6 +43,17 @@ export function UiGallery() {
         </div>
       </section>
 
+      <section className="ui-paper">
+        <h2>Paper</h2>
+        <p>The building card and notes use paper, with a tag for links that leave the site.</p>
+        <div className="ui-gallery-row">
+          <a className="ui-tag" href="#paper">
+            Open on GitHub
+          </a>
+          <span className="ui-tip">release-notes</span>
+        </div>
+      </section>
+
       <section className="ui-panel">
         <h2>Cursors</h2>
         <div className="ui-gallery-row">

@@ -652,6 +652,76 @@ function nail(): Canvas {
   return c;
 }
 
+/**
+ * Paper sheet on a second sheet, 3 pixels lower right, with a ruled border and
+ * corner marks. Nine-slice 32 35 35 32; the same layout as the licensed version
+ * (scripts/art/licensed.ts), which replaces it when the packs are present.
+ */
+function paperSheet(): Canvas {
+  const c = new Canvas(99, 99);
+  const sheet = (ox: number, fill: Hex) => {
+    for (let y = 0; y < 96; y++)
+      for (let x = 0; x < 96; x++) {
+        const corner = Math.min(x, 95 - x) + Math.min(y, 95 - y) < 2;
+        if (!corner) c.set(ox + x, ox + y, fill);
+      }
+  };
+  sheet(3, PAPER[3]);
+  sheet(0, PAPER[4]);
+  for (let i = 6; i < 90; i++) {
+    c.set(i, 6, PAPER[2]);
+    c.set(i, 89, PAPER[2]);
+    c.set(6, i, PAPER[2]);
+    c.set(89, i, PAPER[2]);
+  }
+  for (const [cx, cy] of [
+    [10, 10],
+    [85, 10],
+    [10, 85],
+    [85, 85],
+  ] as const)
+    for (let d = -2; d <= 2; d++) {
+      c.set(cx + d, cy, PAPER[2]);
+      c.set(cx, cy + d, PAPER[2]);
+    }
+  return c;
+}
+
+/** Speech box with a tail at the lower left. Nine-slice 4 12 14 14, like the licensed one. */
+function tooltip(): Canvas {
+  const c = new Canvas(109, 34);
+  for (let y = 0; y < 23; y++)
+    for (let x = 0; x < 109; x++) {
+      const d = Math.min(x, 108 - x, y, 22 - y);
+      c.set(x, y, d === 0 ? WOOD[0] : d === 1 ? WOOD[2] : d === 2 ? INK : PAPER[4]);
+    }
+  for (let y = 23; y < 31; y++)
+    for (let x = 8; x < 13 - Math.max(0, y - 26); x++) c.set(x, y, x === 8 ? WOOD[0] : WOOD[2]);
+  return c;
+}
+
+/** A pinned paper tag with two chevrons. Nine-slice 0 20 0 16, like the licensed one. */
+function tagButton(line: Hex): Canvas {
+  const c = new Canvas(80, 21);
+  for (let y = 2; y < 19; y++)
+    for (let x = 6; x < 72 + Math.min(y - 2, 18 - y); x++) c.set(x, y, PAPER[4]);
+  for (let x = 9; x < 60; x++) {
+    c.set(x, 5, line);
+    c.set(x, 15, line);
+  }
+  for (const ox of [60, 66])
+    for (let y = 2; y < 19; y++) {
+      const dx = Math.min(y - 2, 18 - y) / 2;
+      for (let w = 0; w < 3; w++) c.set(ox + dx + w, y, "239063");
+    }
+  for (let y = 0; y < 21; y++)
+    for (let x = 0; x < 13; x++) {
+      const d = Math.hypot(x - 6, y - 10.5);
+      if (d <= 6) c.set(x, y, d > 5 ? INK : x + y < 15 ? IRON[2] : IRON[1]);
+    }
+  return c;
+}
+
 const open = bookOpen();
 const files: Record<string, Canvas> = {
   "book-open.png": open,
@@ -666,6 +736,11 @@ const files: Record<string, Canvas> = {
   "cursor-hand-press.png": cursor(gauntlet(4)),
   "cursor-fist.png": cursor(gauntlet(11)),
   "nail.png": nail(),
+  "paper-sheet.png": paperSheet(),
+  "tip.png": tooltip(),
+  "button-tag.png": tagButton(PAPER[2]),
+  "button-tag-hover.png": tagButton(CLOTH[1]),
+  "button-tag-pressed.png": tagButton(CLOTH[1]),
 };
 for (const [name, rows] of Object.entries(ICONS)) files[`icon-${name}.png`] = icon(rows);
 for (const [name, { idle, hover }] of Object.entries(BUTTONS)) {

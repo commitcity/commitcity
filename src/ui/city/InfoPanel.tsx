@@ -23,7 +23,7 @@ export function InfoPanel({
   const flags = [repo.isFork && "Fork", repo.isArchived && "Archived"].filter(Boolean);
   return (
     <aside
-      className="city-card ui-parchment"
+      className="city-card ui-paper"
       aria-label="Selected repository"
       aria-live="polite"
       data-testid="info-panel"
@@ -54,13 +54,7 @@ export function InfoPanel({
         <dt>Last activity</dt>
         <dd>{formatDate(repo.pushedAt)}</dd>
       </dl>
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="ui-button ui-button--gold"
-        data-cuelume-navigate
-      >
+      <a href={url} target="_blank" rel="noreferrer" className="ui-tag" data-cuelume-navigate>
         Open on GitHub
       </a>
     </aside>

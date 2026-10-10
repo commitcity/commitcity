@@ -62,6 +62,58 @@
   color: var(--paper-ink);
 }
 
+/*
+ * A sheet of paper on a second sheet, with ornamented corners. The image is
+ * painted 4 art pixels outside the box, so the corners sit around the text.
+ */
+.ui-paper {
+  border-style: solid;
+  border-width: calc(14 * var(--px)) calc(17 * var(--px)) calc(17 * var(--px)) calc(14 * var(--px));
+  border-image: url("/generated/ui/paper-sheet.png") 32 35 35 32 fill / calc(32 * var(--px))
+    calc(35 * var(--px)) calc(35 * var(--px)) calc(32 * var(--px)) / calc(4 * var(--px)) repeat;
+  color: var(--paper-ink);
+}
+
+/* A speech box whose tail, at the lower left, points at what it describes. */
+.ui-tip {
+  padding: 0 calc(2 * var(--px));
+  border-style: solid;
+  border-width: calc(4 * var(--px)) calc(12 * var(--px)) calc(14 * var(--px)) calc(6 * var(--px));
+  border-image: url("/generated/ui/tip.png") 4 12 14 14 fill / calc(4 * var(--px))
+    calc(12 * var(--px)) calc(14 * var(--px)) calc(14 * var(--px)) / 0 0 0 calc(8 * var(--px))
+    repeat;
+  color: var(--paper-ink);
+}
+
+/* A pinned paper tag pointing on: links that leave for another page. */
+.ui-tag {
+  display: inline-flex;
+  align-items: center;
+  height: calc(21 * var(--px));
+  padding: 0 calc(2 * var(--px)) var(--px);
+  font: inherit;
+  color: var(--paper-ink);
+  text-decoration: none;
+  border-style: solid;
+  border-width: 0 calc(20 * var(--px)) 0 calc(16 * var(--px));
+  border-image: url("/generated/ui/button-tag.png") 0 20 0 16 fill / 0 calc(20 * var(--px)) 0
+    calc(16 * var(--px)) stretch;
+}
+
+.ui-tag:hover {
+  border-image-source: url("/generated/ui/button-tag-hover.png");
+  color: #ae2334;
+}
+
+.ui-tag:active {
+  transform: translateY(var(--px));
+}
+
+.ui-tag:focus-visible {
+  outline: var(--px) solid var(--gold);
+  outline-offset: var(--px);
+}
+
 /* Buttons: the face moves down 2 art pixels while pressed. */
 .ui-button {
   --skin: url("/generated/ui/button-wood.png");
@@ -661,13 +713,10 @@
   left: 0;
   z-index: 2;
   max-width: 240px;
-  padding: 0 calc(2 * var(--px));
-  border-width: calc(6 * var(--px));
-  border-image-width: calc(8 * var(--px));
-  border-image-outset: calc(2 * var(--px));
   pointer-events: none;
   overflow-wrap: anywhere;
-  transform: translate(calc(var(--x, 0) + 20px), calc(var(--y, 0) + 24px));
+  /* Above the pointer, with the tail just over its tip. */
+  transform: translate(calc(var(--x, 0) - 6px), calc(var(--y, 0) - 100% - 6px));
 }
 
 .city-tip[hidden] {
@@ -676,12 +725,12 @@
 
 .city-card {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 16px;
+  bottom: 16px;
   display: grid;
   gap: calc(3 * var(--px));
   justify-items: start;
-  width: min(340px, calc(100% - 16px));
+  width: min(340px, calc(100% - 32px));
 }
 
 .city-card-head {

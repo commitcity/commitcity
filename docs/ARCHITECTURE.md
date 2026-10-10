@@ -410,6 +410,7 @@ The adapter lives in `src/data/github` (milestone 5.1). `fetchCityInput(login, o
 | Caching | `getCityInput` is a `use cache: remote` function, so the hosting platform's cache is shared across server instances; locally it falls back to memory. The cache key is the login in lower case. A city is refreshed in the background after a day (`cacheLife("days")`); a missing user is looked up again after an hour; rate limits and outages are kept for seconds only. Each entry is tagged `github:<login>` for `revalidateTag`. No database. | Confirmed |
 | Timelapse history | Placement only needs `createdAt`, which is cheap. Showing *how buildings grew* over time needs historical activity, which is expensive to fetch and may be the first real reason to add persistence. | Open |
 | Abuse protection | Limit lookups per IP and only allow existing GitHub users. | Later |
+| Social previews | `/u/<login>/opengraph-image` (and `twitter-image`) draws the same city on the server with no PixiJS: `src/core/raster` blits the render list from the packed atlas into a pixel buffer, scaled by a whole number (2× or 3×, cropped around the center when the city is bigger than the frame), with a wooden plaque along the bottom. `src/data/assets` reads the atlas with a small PNG codec on `node:zlib`; `ImageResponse` only adds the text. The PNG is cached like the city data (tag `github:<login>`, a day; errors fall back to the home page's card for minutes). The home card is drawn at build time from `fixtures/medium.json`. | Confirmed (milestone 6.1) |
 
 ## 11. Performance targets
 

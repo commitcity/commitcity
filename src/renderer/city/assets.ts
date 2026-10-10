@@ -1,17 +1,15 @@
 import { Rectangle, Texture } from "pixi.js";
-import { frameKey, resolveView } from "@/core/assets";
-import { type HitMask, parseBuildingKey } from "@/core/view";
+import { atlasFrame } from "@/core/raster";
+import type { HitMask } from "@/core/view";
 import type { LoadedAssets } from "./loadAssets";
 
 /** Building textures and hit masks cut from the atlas. */
 export class AtlasTextures {
   private readonly source: Texture | null;
-  private readonly manifests;
   private readonly textures = new Map<string, Texture>();
   private readonly masks = new Map<string, HitMask>();
 
   constructor(private readonly assets: LoadedAssets) {
-    this.manifests = new Map(assets.packed.buildings.map((m) => [m.id, m]));
     if (assets.atlas) {
       const canvas = document.createElement("canvas");
       canvas.width = assets.atlas.width;
@@ -64,19 +62,7 @@ export class AtlasTextures {
     this.source?.destroy(true);
   }
 
-  /**
-   * Building keys map to a frame by manifest, nearest view and variant (levels
-   * share one drawing); ground, road and decoration keys are frame keys already.
-   */
   private frame(textureKey: string) {
-    const building = parseBuildingKey(textureKey);
-    let key = textureKey;
-    if (building) {
-      const manifest = this.manifests.get(building.manifestId);
-      if (!manifest) return undefined;
-      key = frameKey(manifest.id, resolveView(manifest, building.view), building.variant as never);
-    }
-    const frame = this.assets.packed.frames[key];
-    return frame && { key, ...frame };
+    return atlasFrame(this.assets.packed, textureKey);
   }
 }

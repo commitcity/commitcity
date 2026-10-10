@@ -333,6 +333,7 @@ Menus, panels, buttons and cursors share the city's palette and hard pixels, in 
 | Cursors | An iron gauntlet in three-quarter view, 22 × 22 drawn, written at 2x (44 × 44), since browsers show cursor images at their CSS size. Pointer hotspot at the fingertip. |
 | Font | [Pixelify Sans](https://fonts.google.com/specimen/Pixelify+Sans) (SIL Open Font License), loaded with `next/font`. Book titles use [Jacquard 12](https://fonts.google.com/specimen/Jacquard+12), a pixel blackletter under the same license. |
 | Sound | Interaction sounds are synthesized in the browser by [cuelume](https://www.npmjs.com/package/cuelume) (MIT): elements opt in with `data-cuelume-*` attributes, at half volume. A sound button on the landing page and in the city HUD turns them off, and the choice is remembered in the browser. No sound plays on hover. |
+| Social previews | The city at 2× or 3× on the renderer's night background, with a `panel-wood` plaque along the bottom: CommitCity in Jacquard 12 (gold), the owner in Pixelify Sans (paper) and the building count (muted). The fonts are vendored as `.woff` in `assets/fonts/` (SIL Open Font License) because `ImageResponse` cannot read `next/font`. Only the text is antialiased. |
 | Accessibility | Pieces are styles on real `<button>`, `<input>` and `<a>` elements, so keyboard and screen readers keep working. Every image has a CSS fallback cursor. |
 
 `/dev/ui` shows every piece. The CSS lives in `src/app/ui.css`; a page opts in with the `ui` class.

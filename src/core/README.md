@@ -11,3 +11,4 @@ Planned modules (see [`docs/ARCHITECTURE.md` §3.1](../../docs/ARCHITECTURE.md#3
 | `generation/` | `CityInput` → `CityModel`                  |
 | `view/`       | `CityModel` + orientation → `RenderList`   |
 | `assets/`     | Building manifest types and catalog        |
+| `raster/`     | `RenderList` → pixels, for social previews |

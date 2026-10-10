@@ -546,6 +546,88 @@ function bookHalf(open: Canvas, right: boolean): Canvas {
   return c;
 }
 
+/** Symbols for icon buttons, 10 × 10: `x` is a stroke. */
+const ICONS: Record<string, string[]> = {
+  plus: [
+    "..........",
+    "....xx....",
+    "....xx....",
+    "....xx....",
+    ".xxxxxxxx.",
+    ".xxxxxxxx.",
+    "....xx....",
+    "....xx....",
+    "....xx....",
+    "..........",
+  ],
+  minus: [
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    ".xxxxxxxx.",
+    ".xxxxxxxx.",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+  ],
+  close: [
+    "..........",
+    ".xx....xx.",
+    ".xxx..xxx.",
+    "..xxxxxx..",
+    "...xxxx...",
+    "...xxxx...",
+    "..xxxxxx..",
+    ".xxx..xxx.",
+    ".xx....xx.",
+    "..........",
+  ],
+  "rotate-right": [
+    "..xxxx....",
+    ".xxxxxx...",
+    "xx....xx..",
+    "xx.....xx.",
+    "xx...xxxxx",
+    "xx....xxx.",
+    "xx.....x..",
+    "xx........",
+    ".xxxx.....",
+    "..xxxx....",
+  ],
+};
+ICONS["rotate-left"] = ICONS["rotate-right"]!.map((row) => [...row].reverse().join(""));
+
+/** An icon in parchment with a one-pixel ink shadow below, like button text. */
+function icon(rows: readonly string[]): Canvas {
+  const c = new Canvas(10, 11);
+  rows.forEach((row, y) =>
+    [...row].forEach((ch, x) => {
+      if (ch !== "x") return;
+      if (rows[y + 1]?.[x] !== "x") c.set(x, y + 1, INK);
+    }),
+  );
+  rows.forEach((row, y) => [...row].forEach((ch, x) => ch === "x" && c.set(x, y, PAPER[4])));
+  return c;
+}
+
+/** The nail that pins a note to the screen: a round iron head with a glint. */
+function nail(): Canvas {
+  const c = new Canvas(8, 8);
+  for (let y = 0; y < 8; y++)
+    for (let x = 0; x < 8; x++) {
+      const d = Math.hypot(x - 3.5, y - 3.5);
+      if (d > 3.8) continue;
+      const upperLeft = x + y < 7;
+      c.set(x, y, d > 2.8 ? INK : upperLeft ? IRON[2] : IRON[1]);
+    }
+  c.set(2, 2, IRON[3]);
+  c.set(3, 2, IRON[3]);
+  c.set(2, 3, IRON[3]);
+  return c;
+}
+
 const open = bookOpen();
 const files: Record<string, Canvas> = {
   "book-open.png": open,
@@ -559,7 +641,9 @@ const files: Record<string, Canvas> = {
   "cursor-hand.png": cursor(gauntlet(0)),
   "cursor-hand-press.png": cursor(gauntlet(4)),
   "cursor-fist.png": cursor(gauntlet(11)),
+  "nail.png": nail(),
 };
+for (const [name, rows] of Object.entries(ICONS)) files[`icon-${name}.png`] = icon(rows);
 for (const [name, { idle, hover }] of Object.entries(BUTTONS)) {
   files[`button-${name}.png`] = button(idle, false);
   files[`button-${name}-hover.png`] = button(hover, false);

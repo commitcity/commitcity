@@ -22,10 +22,10 @@ export function UiGallery() {
           <button className="ui-button ui-button--gold">Open city</button>
           <button className="ui-button">Settings</button>
           <button className="ui-button ui-button--icon" aria-label="Rotate left">
-            ⟲
+            <span className="ui-icon ui-icon--rotate-left" aria-hidden="true" />
           </button>
           <button className="ui-button ui-button--icon" aria-label="Zoom in">
-            +
+            <span className="ui-icon ui-icon--plus" aria-hidden="true" />
           </button>
           <button className="ui-button" disabled>
             Disabled

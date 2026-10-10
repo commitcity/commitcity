@@ -35,7 +35,9 @@
 }
 
 .ui .grabbing,
-.ui .grabbing * {
+.ui .grabbing *,
+.ui.grabbing,
+.ui.grabbing * {
   cursor:
     url("/generated/ui/cursor-fist.png") 22 22,
     grabbing;
@@ -536,4 +538,248 @@
   .book-hint {
     animation: none;
   }
+}
+
+/* Symbols for icon buttons, 10 × 11 art pixels. */
+.ui-icon {
+  display: block;
+  width: calc(10 * var(--px));
+  height: calc(11 * var(--px));
+  background: 0 0 / 100% 100% no-repeat;
+}
+
+.ui-icon--plus {
+  background-image: url("/generated/ui/icon-plus.png");
+}
+
+.ui-icon--minus {
+  background-image: url("/generated/ui/icon-minus.png");
+}
+
+.ui-icon--close {
+  background-image: url("/generated/ui/icon-close.png");
+}
+
+.ui-icon--rotate-left {
+  background-image: url("/generated/ui/icon-rotate-left.png");
+}
+
+.ui-icon--rotate-right {
+  background-image: url("/generated/ui/icon-rotate-right.png");
+}
+
+/* A parchment note pinned by a nail at the top. */
+.ui-note {
+  position: relative;
+}
+
+.ui-note::before {
+  content: "";
+  position: absolute;
+  top: calc(-6 * var(--px));
+  left: calc(50% - 4 * var(--px));
+  width: calc(8 * var(--px));
+  height: calc(8 * var(--px));
+  background: url("/generated/ui/nail.png") 0 0 / 100% 100% no-repeat;
+}
+
+/* Public city: the heads-up display over the canvas */
+.city {
+  position: fixed;
+  inset: 0;
+}
+
+.city-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* The renderer asks for a pointer over buildings; the gauntlet already points. */
+.ui canvas {
+  cursor: inherit !important;
+}
+
+.city-bar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0 calc(6 * var(--px));
+  align-items: baseline;
+  max-width: calc(100% - 16px);
+}
+
+.city-bar :is(h1, p) {
+  margin: 0;
+}
+
+.city-brand {
+  font-family: var(--font-blackletter), var(--font-pixel), serif;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.city-bar h1 {
+  font-size: 20px;
+  font-weight: normal;
+  overflow-wrap: anywhere;
+}
+
+.city-bar h1 a {
+  color: var(--paper);
+}
+
+.city-meta,
+.city-hint {
+  grid-column: 1 / -1;
+  color: #ab947a;
+}
+
+.city-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: calc(2 * var(--px));
+  padding: 0;
+}
+
+.city-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  max-width: 240px;
+  padding: 0 calc(2 * var(--px));
+  border-width: calc(6 * var(--px));
+  border-image-width: calc(8 * var(--px));
+  border-image-outset: calc(2 * var(--px));
+  pointer-events: none;
+  overflow-wrap: anywhere;
+  transform: translate(calc(var(--x, 0) + 20px), calc(var(--y, 0) + 24px));
+}
+
+.city-tip[hidden] {
+  display: none;
+}
+
+.city-card {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  gap: calc(3 * var(--px));
+  justify-items: start;
+  width: min(340px, calc(100% - 16px));
+}
+
+.city-card-head {
+  display: flex;
+  gap: calc(3 * var(--px));
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.city-card h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: normal;
+  line-height: 1.1;
+  color: #ae2334;
+  overflow-wrap: anywhere;
+}
+
+.city-card p {
+  margin: 0;
+}
+
+.city-card-flags {
+  color: #9e4539;
+}
+
+.city-card dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 calc(6 * var(--px));
+  width: 100%;
+  margin: 0;
+  padding-top: calc(3 * var(--px));
+  border-top: var(--px) dashed #ab947a;
+}
+
+.city-card dt {
+  color: #966c6c;
+}
+
+.city-card dd {
+  margin: 0;
+}
+
+.city-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: min(360px, calc(100% - 32px));
+  margin: 0;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+/* Narrow screens: the controls stack in the corner and the card spans the bottom. */
+@media (max-width: 559px) {
+  .city-bar {
+    max-width: calc(100% - 24px - 34 * var(--px));
+  }
+
+  .city-controls {
+    flex-direction: column;
+  }
+
+  .city-card {
+    left: 8px;
+    width: auto;
+  }
+
+  .city-hint {
+    display: none;
+  }
+}
+
+/* Full-page messages (loading, errors): a note nailed over the sample city. */
+.message {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 16px;
+}
+
+.message-note {
+  display: grid;
+  gap: calc(4 * var(--px));
+  justify-items: center;
+  max-width: 440px;
+  text-align: center;
+}
+
+.message-note h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: normal;
+  color: #ae2334;
+}
+
+.message-note p {
+  margin: 0;
+}
+
+.message-note nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(3 * var(--px));
 }

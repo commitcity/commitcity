@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BackdropCity } from "@/ui/home/BackdropCity";
 import { Book } from "@/ui/home/Book";
 import { UsernameForm } from "@/ui/home/UsernameForm";
+import { SoundToggle } from "@/ui/sound/SoundToggle";
 
 const EXAMPLES = ["torvalds", "sindresorhus", "vercel"];
 
@@ -9,6 +10,7 @@ export default function HomePage() {
   return (
     <main className="ui home">
       <BackdropCity />
+      <SoundToggle className="home-sound" />
       <Book
         title="CommitCity"
         subtitle="Your code. Your city."
@@ -38,7 +40,9 @@ export default function HomePage() {
               {EXAMPLES.map((login, i) => (
                 <span key={login}>
                   {i > 0 && ", "}
-                  <Link href={`/u/${login}`}>{login}</Link>
+                  <Link href={`/u/${login}`} data-cuelume-navigate>
+                    {login}
+                  </Link>
                 </span>
               ))}
               .

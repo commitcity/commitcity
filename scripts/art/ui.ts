@@ -597,6 +597,30 @@ const ICONS: Record<string, string[]> = {
     "..xxxx....",
   ],
 };
+ICONS["sound-on"] = [
+  "....x.....",
+  "...xx...x.",
+  "..xxx.x..x",
+  "xxxxx..x.x",
+  "xxxxx..x.x",
+  "xxxxx..x.x",
+  "xxxxx..x.x",
+  "..xxx.x..x",
+  "...xx...x.",
+  "....x.....",
+];
+ICONS["sound-off"] = [
+  "....x.....",
+  "...xx.....",
+  "..xxx.....",
+  "xxxxx.x..x",
+  "xxxxx..xx.",
+  "xxxxx..xx.",
+  "xxxxx.x..x",
+  "..xxx.....",
+  "...xx.....",
+  "....x.....",
+];
 ICONS["rotate-left"] = ICONS["rotate-right"]!.map((row) => [...row].reverse().join(""));
 
 /** An icon in parchment with a one-pixel ink shadow below, like button text. */

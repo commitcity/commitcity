@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { isValidLogin } from "@/data/github/fetchCityInput";
+import { cue } from "@/ui/sound/sound";
 
 /** Asks for a GitHub username and opens its city. */
 export function UsernameForm() {
@@ -18,6 +19,7 @@ export function UsernameForm() {
         const value = login.trim().replace(/^@/, "");
         if (!isValidLogin(value)) {
           setInvalid(true);
+          cue("error");
           return;
         }
         router.push(`/u/${value}`);
@@ -41,8 +43,10 @@ export function UsernameForm() {
           required
           aria-invalid={invalid}
           aria-describedby={invalid ? "login-error" : undefined}
+          data-cuelume-type
+          data-cuelume-emphasis="subtle"
         />
-        <button type="submit" className="ui-button ui-button--gold">
+        <button type="submit" className="ui-button ui-button--gold" data-cuelume-tap>
           Open city
         </button>
       </div>

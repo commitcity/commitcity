@@ -45,7 +45,12 @@ export function Book({
       <div className="book-spread">
         <section className="book-page book-page--left" aria-hidden={state !== "open"}>
           {left}
-          <button type="button" className="book-turn" onClick={() => setPage("right")}>
+          <button
+            type="button"
+            className="book-turn"
+            onClick={() => setPage("right")}
+            data-cuelume-navigate
+          >
             {rightLabel} ›
           </button>
         </section>
@@ -55,7 +60,12 @@ export function Book({
           aria-hidden={state === "closed"}
         >
           {right}
-          <button type="button" className="book-turn" onClick={() => setPage("left")}>
+          <button
+            type="button"
+            className="book-turn"
+            onClick={() => setPage("left")}
+            data-cuelume-navigate
+          >
             ‹ {leftLabel}
           </button>
         </section>
@@ -69,6 +79,8 @@ export function Book({
             if (e.propertyName === "transform" && state === "opening") setState("open");
           }}
           aria-label={`${title}: open the book`}
+          data-cuelume-open
+          data-cuelume-emphasis="strong"
         >
           <span className="book-face book-face--front">
             <span className="book-title">{title}</span>

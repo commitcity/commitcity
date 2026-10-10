@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Jacquard_12, Pixelify_Sans } from "next/font/google";
 import type { ReactNode } from "react";
+import { Sounds } from "@/ui/sound/Sounds";
 import "./globals.css";
 import "./ui.css";
 
@@ -22,7 +23,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${pixel.variable} ${blackletter.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Sounds />
+      </body>
     </html>
   );
 }

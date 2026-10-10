@@ -21,11 +21,11 @@ export function CityMessage({
         {children && <p>{children}</p>}
         <nav>
           {retryHref && (
-            <a href={retryHref} className="ui-button">
+            <a href={retryHref} className="ui-button" data-cuelume-tap>
               Try again
             </a>
           )}
-          <Link href="/" className="ui-button ui-button--gold">
+          <Link href="/" className="ui-button ui-button--gold" data-cuelume-navigate>
             Build another city
           </Link>
         </nav>

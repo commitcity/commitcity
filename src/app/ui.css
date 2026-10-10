@@ -560,6 +560,14 @@
   background-image: url("/generated/ui/icon-close.png");
 }
 
+.ui-icon--sound-on {
+  background-image: url("/generated/ui/icon-sound-on.png");
+}
+
+.ui-icon--sound-off {
+  background-image: url("/generated/ui/icon-sound-off.png");
+}
+
 .ui-icon--rotate-left {
   background-image: url("/generated/ui/icon-rotate-left.png");
 }
@@ -782,4 +790,12 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: calc(3 * var(--px));
+}
+
+/* Sound switch on the landing page, in the corner over the city. */
+.home-sound {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
 }

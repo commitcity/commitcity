@@ -4,6 +4,8 @@ import Link from "next/link";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import type { CityInput } from "@/core/model";
 import type { Orientation } from "@/core/view";
+import { cue } from "@/ui/sound/sound";
+import { SoundToggle } from "@/ui/sound/SoundToggle";
 import { InfoPanel } from "./InfoPanel";
 import { type ViewParams, viewQuery } from "./params";
 import { useCity } from "./useCity";
@@ -26,6 +28,14 @@ export function PublicCityView({ input, initial }: { input: CityInput; initial: 
     const query = viewQuery({ orientation, repo: selected?.name ?? null });
     window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
   }, [orientation, selected]);
+
+  // Picking a building is announced; the selection read from the URL on load is not.
+  const shownSelection = useRef(selected?.id ?? null);
+  useEffect(() => {
+    const id = selected?.id ?? null;
+    if (id !== null && id !== shownSelection.current) cue("select");
+    shownSelection.current = id;
+  }, [selected]);
 
   const rotate = (step: number) => setOrientation((o) => ((o + step + 4) % 4) as Orientation);
 
@@ -50,7 +60,7 @@ export function PublicCityView({ input, initial }: { input: CityInput; initial: 
     >
       <div ref={hostRef} className="city-canvas" />
       <header className="city-bar ui-panel">
-        <Link href="/" className="city-brand">
+        <Link href="/" className="city-brand" data-cuelume-navigate>
           CommitCity
         </Link>
         <h1>
@@ -67,6 +77,7 @@ export function PublicCityView({ input, initial }: { input: CityInput; initial: 
         <IconButton icon="rotate-right" label="Rotate right (E)" onClick={() => rotate(1)} />
         <IconButton icon="minus" label="Zoom out (-)" onClick={() => setZoom(zoom - 1)} />
         <IconButton icon="plus" label="Zoom in (+)" onClick={() => setZoom(zoom + 1)} />
+        <SoundToggle />
       </nav>
       <div ref={tipRef} className="city-tip ui-parchment" hidden={!hovered} aria-live="polite">
         {hovered?.name}
@@ -97,6 +108,7 @@ function IconButton({
       onClick={onClick}
       aria-label={label}
       title={label}
+      data-cuelume-tap
     >
       <span className={`ui-icon ui-icon--${icon}`} aria-hidden="true" />
     </button>

@@ -35,6 +35,7 @@ export function InfoPanel({
           className="ui-button ui-button--icon"
           onClick={onClose}
           aria-label="Close (Escape)"
+          data-cuelume-close
         >
           <span className="ui-icon ui-icon--close" aria-hidden="true" />
         </button>
@@ -53,7 +54,13 @@ export function InfoPanel({
         <dt>Last activity</dt>
         <dd>{formatDate(repo.pushedAt)}</dd>
       </dl>
-      <a href={url} target="_blank" rel="noreferrer" className="ui-button ui-button--gold">
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="ui-button ui-button--gold"
+        data-cuelume-navigate
+      >
         Open on GitHub
       </a>
     </aside>

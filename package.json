@@ -26,6 +26,7 @@
     "art": "tsx scripts/art/terrain.ts && tsx scripts/art/buildings.ts && tsx scripts/art/ui.ts && prettier --write assets --log-level warn"
   },
   "dependencies": {
+    "cuelume": "0.2.4",
     "next": "16.4.0",
     "pixi.js": "^8.22.0",
     "react": "19.3.0",

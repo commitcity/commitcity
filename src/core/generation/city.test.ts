@@ -77,8 +77,34 @@ describe("generateCity", () => {
       PLACEHOLDER_CATALOG,
     );
     for (const building of before.buildings) expect(after.buildings).toContainEqual(building);
-    for (const decoration of before.decorations)
+    // Parks give way to the new building; repository decorations stay put.
+    for (const decoration of before.decorations.filter((d) => !d.repoId.startsWith("park:")))
       expect(after.decorations).toContainEqual(decoration);
+  });
+
+  it("fills the unused lots of the last block with parks", () => {
+    const input = FIXTURES.medium!;
+    const model = generateCity(input, PLACEHOLDER_CATALOG);
+    const unused = (4 - (input.repos.length % 4)) % 4;
+    const parks = new Set(
+      model.decorations.filter((d) => d.repoId.startsWith("park:")).map((d) => d.repoId),
+    );
+    expect(parks.size).toBeGreaterThanOrEqual(Math.min(unused, 1));
+  });
+
+  it("never puts a building, road or decoration on water", () => {
+    for (const input of Object.values(FIXTURES)) {
+      const model = generateCity(input, PLACEHOLDER_CATALOG);
+      const water = new Set(
+        model.ground.filter((g) => g.kind === "water").map((g) => `${g.x},${g.y}`),
+      );
+      for (const d of model.decorations) expect(water.has(`${d.x},${d.y}`)).toBe(false);
+      for (const r of model.roads) expect(water.has(`${r.x},${r.y}`)).toBe(false);
+      for (const b of model.buildings)
+        for (let dx = 0; dx < b.footprint; dx++)
+          for (let dy = 0; dy < b.footprint; dy++)
+            expect(water.has(`${b.origin.x + dx},${b.origin.y + dy}`)).toBe(false);
+    }
   });
 
   it("generates the 320-repository fixture in under 50 ms", () => {

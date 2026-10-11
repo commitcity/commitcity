@@ -4,14 +4,15 @@ import { type RgbaImage, checkCommonFields, checkFlatTile, checkSprite } from ".
 // with a manifest and a fixed set of PNGs; the file names match the variants and
 // shapes the generator and view layer produce, so every texture key has art.
 
-export type TileKind = "ground" | "road" | "vegetation";
+export type TileKind = "ground" | "road" | "water" | "vegetation";
 
-export const TILE_KINDS: readonly TileKind[] = ["ground", "road", "vegetation"];
+export const TILE_KINDS: readonly TileKind[] = ["ground", "road", "water", "vegetation"];
 
 /** Folder under `assets/` for each kind. */
 export const TILE_FOLDERS: Record<TileKind, string> = {
   ground: "ground",
   road: "roads",
+  water: "water",
   vegetation: "vegetation",
 };
 
@@ -20,12 +21,16 @@ export const GROUND_VARIANT_COUNT = 4;
 /** Variants per decoration kind; the generator picks one per decoration. */
 export const DECORATION_VARIANT_COUNT = 3;
 export const ROAD_SHAPE_COUNT = 16;
+/** Water tiles are auto-tiled like roads: one shape per neighbor mask. */
+export const WATER_SHAPE_COUNT = 16;
 
 /** Folder ids each kind accepts: the names the generator uses. */
 const TILE_IDS: Record<TileKind, readonly string[] | null> = {
   ground: ["grass", "dirt", "pavement"],
   road: null,
-  vegetation: ["tree", "bush", "flowers", "weeds", "dead-tree"],
+  water: ["water"],
+  // Props live with the vegetation: they stand on one tile the same way.
+  vegetation: ["tree", "bush", "flowers", "weeds", "dead-tree", "fountain", "bench", "lamp"],
 };
 
 export interface TileManifest {
@@ -69,6 +74,11 @@ export function tileFiles(manifest: TileManifest): { file: string; textureKey: s
         file: `mask-${mask}.png`,
         textureKey: `road/${mask}`,
       }));
+    case "water":
+      return range(WATER_SHAPE_COUNT).map((mask) => ({
+        file: `mask-${mask}.png`,
+        textureKey: `water/${mask}`,
+      }));
     case "vegetation":
       return range(DECORATION_VARIANT_COUNT).map((i) => ({
         file: `variant-${i}.png`,
@@ -78,7 +88,7 @@ export function tileFiles(manifest: TileManifest): { file: string; textureKey: s
 }
 
 /**
- * Checks one tile image. Ground and road tiles are one full 32 × 16 diamond;
+ * Checks one tile image. Ground, road and water tiles are one full 32 × 16 diamond;
  * vegetation follows the rules of a 1 × 1 building (bottom-anchored, grows upward).
  */
 export function checkTile(

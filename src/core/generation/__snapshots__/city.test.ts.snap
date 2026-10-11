@@ -25,13 +25,13 @@ exports[`generateCity > is deterministic and matches its snapshot (edge-cases) 1
   "catalogVersion": "14dc3468a4d398",
   "counts": {
     "buildings": 12,
-    "decorations": 46,
+    "decorations": 39,
     "dirt": 32,
     "ground": 529,
     "roads": 88,
   },
-  "digest": "1e32868e0fbd5c",
-  "generatorVersion": 1,
+  "digest": "8ee11a41e722",
+  "generatorVersion": 2,
 }
 `;
 
@@ -368,13 +368,13 @@ exports[`generateCity > is deterministic and matches its snapshot (large) 1`] = 
   "catalogVersion": "14dc3468a4d398",
   "counts": {
     "buildings": 320,
-    "decorations": 1528,
+    "decorations": 1405,
     "dirt": 368,
     "ground": 7396,
     "roads": 1532,
   },
-  "digest": "12706e60150c92",
-  "generatorVersion": 1,
+  "digest": "689f05cd80bee",
+  "generatorVersion": 2,
 }
 `;
 
@@ -421,13 +421,13 @@ exports[`generateCity > is deterministic and matches its snapshot (medium) 1`] =
   "catalogVersion": "14dc3468a4d398",
   "counts": {
     "buildings": 30,
-    "decorations": 124,
+    "decorations": 129,
     "dirt": 32,
     "ground": 1024,
     "roads": 200,
   },
-  "digest": "4e8746aae2dc",
-  "generatorVersion": 1,
+  "digest": "11d151505608f2",
+  "generatorVersion": 2,
 }
 `;
 
@@ -446,12 +446,12 @@ exports[`generateCity > is deterministic and matches its snapshot (tiny) 1`] = `
   "catalogVersion": "14dc3468a4d398",
   "counts": {
     "buildings": 2,
-    "decorations": 7,
+    "decorations": 30,
     "dirt": 0,
     "ground": 196,
     "roads": 36,
   },
-  "digest": "140fe2b06466ca",
-  "generatorVersion": 1,
+  "digest": "751c78fbb1612",
+  "generatorVersion": 2,
 }
 `;

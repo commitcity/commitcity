@@ -51,11 +51,21 @@ export function buildRenderList(
       .map((item) => ({ item, view: rotateTile(item, orientation) }))
       .sort((a, b) => a.view.y - b.view.y || a.view.x - b.view.x);
 
-  const ground = flat(model.ground).map(({ item, view }, depth): RenderItem => {
+  const groundTiles = flat(model.ground);
+  // Water is auto-tiled like roads: shores face the neighbors that are not water.
+  const waterSet = new Set(
+    groundTiles
+      .filter(({ item }) => item.kind === "water")
+      .map(({ view }) => `${view.x},${view.y}`),
+  );
+  const ground = groundTiles.map(({ item, view }, depth): RenderItem => {
     const screen = worldToScreen(view, tile);
     return {
       layer: "ground",
-      textureKey: `ground/${item.kind}/${item.variant}`,
+      textureKey:
+        item.kind === "water"
+          ? waterKey(roadMask(view, waterSet))
+          : `ground/${item.kind}/${item.variant}`,
       screenX: screen.x,
       screenY: screen.y,
       depth,
@@ -124,6 +134,11 @@ export function roadMask(view: { x: number; y: number }, roads: ReadonlySet<stri
 
 export function roadKey(mask: RoadMask): string {
   return `road/${mask}`;
+}
+
+/** Water tiles use the same neighbor mask as roads, counting water neighbors. */
+export function waterKey(mask: RoadMask): string {
+  return `water/${mask}`;
 }
 
 export interface BuildingKey {

@@ -58,7 +58,6 @@ const SAND_STONE = ramp("694f62", "966c6c", "ab947a", "fca790", "fdcbb0");
 const METAL = ramp(...RAMPS.concrete);
 const RUST = ramp("4c3e24", "6e2727", "9e4539", "cd683d", "e6904e");
 const GLASS = ramp(...RAMPS.glass);
-const TEAL_GLASS = ramp("0b5e65", "0b8a8f", "0eaf9b", "30e1b9", "8ff8e2");
 const GOLD = ramp("9e4539", "f79617", "f9c22b", "fbff86");
 const HEDGE = ramp(...RAMPS.foliage);
 const WATER = ramp("323353", "4d65b4", "4d9be6", "8fd3ff");
@@ -868,49 +867,22 @@ function roundTower(tiles: number) {
     const c = S / 2;
     const r = tiles * 5;
     const h = 30 + ctx.level * 20 + tiles * 8;
-    const glass = (hit: Hit): Hex | null => {
-      const z = Math.floor(hit.p[2]);
-      if (hit.facing === "top") return null;
-      if (z % 5 === 0) return RAMPS.concrete[4];
-      const angle = Math.atan2(hit.p[1] - c, hit.p[0] - c);
-      const col = Math.floor((angle + Math.PI) * r * 0.5);
-      const n = noise(ctx.seed, col, Math.floor(z / 5));
-      if (ctx.abandoned) return n < 0.5 ? COLORS.board : "2e222f";
-      return n < 0.15 ? COLORS.litWindow : null;
-    };
+    const g = tiles === 2 ? TINTS.sky!.ramp : TINTS.blue!.ramp;
     return [
       { solid: box(3, 3, 0, S - 3, S - 3, 8), material: STONE },
-      { solid: cylinder(c, c, r, 8, h), material: GLASS, detail: glass },
+      { solid: cylinder(c, c, r, 8, h), material: g, detail: curtain(ctx, g, 5, 3, 8) },
       { solid: cylinder(c, c, r - 2, h, h + 4), material: STONE },
       { solid: cylinder(c, c, 0.6, h + 4, h + 14), material: METAL },
     ];
   };
 }
 
-/** A slim teal glass slab with a crown. */
+/** A slim glass slab with a crown. */
 function slab(ctx: Ctx): Part[] {
   const h = 20 + ctx.level * 14;
+  const g = TINTS.silver!.ramp;
   return [
-    {
-      solid: box(3, 4, 0, 13, 12, h),
-      material: TEAL_GLASS,
-      detail: windows({
-        seed: ctx.seed,
-        abandoned: ctx.abandoned,
-        period: 3,
-        width: 2,
-        storey: 5,
-        sill: 1,
-        height: 4,
-        from: 5,
-        to: h - 1,
-        margin: 1,
-        s0: 3,
-        s1: 13,
-        glass: [TEAL_GLASS.ramp[3]!, TEAL_GLASS.ramp[1]!],
-        lit: 0.15,
-      }),
-    },
+    { solid: box(3, 4, 0, 13, 12, h), material: g, detail: curtain(ctx, g, 4, 3) },
     { solid: box(5, 6, h, 11, 10, h + 5), material: STONE },
     { solid: box(7, 7, h + 5, 9, 9, h + 12), material: METAL },
   ];
@@ -989,24 +961,67 @@ const ROOFS: Record<string, Material> = {
   dark: ramp("2e222f", "3e3546", "625565", "7f708a"),
   wine: ramp("45293f", "831c5d", "c32454", "f04f78"),
 };
-/** Glass ramps, darkest first; the light and dark window colours come from steps 3 and 1. */
-const GLASSES: Record<string, Material> = {
-  blue: GLASS,
-  teal: TEAL_GLASS,
-  dark: ramp("2e222f", "3e3546", "484a77", "625565", "7f708a"),
-  gold: ramp("4c3e24", "9e4539", "f79617", "fbb954", "fbff86"),
-  green: ramp("165a4c", "374e4a", "547e64", "92a984", "b2ba90"),
-  violet: ramp("45293f", "6b3e75", "905ea9", "a884f3", "eaaded"),
-  silver: ramp("3e3546", "625565", "7f708a", "9babb2", "c7dcd0"),
+/**
+ * Glass tints, after real curtain walls: pale and greyish on the lit face, deep on
+ * the shaded one, with thin frames and a few diagonal sky reflections. `ramp`
+ * shades roofs and outlines; `lit` is the share of panes lit from inside.
+ */
+interface Tint {
+  ramp: Material;
+  left: { base: Hex; streak: Hex; frame: Hex };
+  right: { base: Hex; streak: Hex; frame: Hex };
+  lit: number;
+}
+const TINTS: Record<string, Tint> = {
+  sky: {
+    ramp: ramp("323353", "484a77", "7f708a", "9babb2", "c7dcd0"),
+    left: { base: "9babb2", streak: "8fd3ff", frame: "c7dcd0" },
+    right: { base: "484a77", streak: "4d65b4", frame: "7f708a" },
+    lit: 0,
+  },
+  silver: {
+    ramp: ramp("2e222f", "3e3546", "625565", "7f708a", "9babb2"),
+    left: { base: "7f708a", streak: "9babb2", frame: "c7dcd0" },
+    right: { base: "3e3546", streak: "625565", frame: "625565" },
+    lit: 0.02,
+  },
+  dark: {
+    ramp: ramp("2e222f", "2e222f", "3e3546", "625565", "7f708a"),
+    left: { base: "3e3546", streak: "484a77", frame: "625565" },
+    right: { base: "2e222f", streak: "3e3546", frame: "3e3546" },
+    lit: 0.06,
+  },
+  blue: {
+    ramp: GLASS,
+    left: { base: "4d65b4", streak: "4d9be6", frame: "8fd3ff" },
+    right: { base: "323353", streak: "484a77", frame: "484a77" },
+    lit: 0.06,
+  },
+  sage: {
+    ramp: ramp("313638", "374e4a", "547e64", "92a984", "b2ba90"),
+    left: { base: "547e64", streak: "92a984", frame: "b2ba90" },
+    right: { base: "313638", streak: "374e4a", frame: "374e4a" },
+    lit: 0.03,
+  },
+  bronze: {
+    ramp: ramp("45293f", "694f62", "966c6c", "ab947a", "fdcbb0"),
+    left: { base: "694f62", streak: "966c6c", frame: "ab947a" },
+    right: { base: "45293f", streak: "45293f", frame: "694f62" },
+    lit: 0.04,
+  },
 };
+const GLASSES: Record<string, Material> = Object.fromEntries(
+  Object.entries(TINTS).map(([name, t]) => [name, t.ramp]),
+);
+const tintOf = (m: Material): Tint => Object.values(TINTS).find((t) => t.ramp === m) ?? TINTS.sky!;
 const WOOD = ramp("4c3e24", "694f62", "966c6c", "ab947a");
 const PITCH = ramp("165a4c", "239063", "1ebc73", "91db69");
 
 /** Schemes are "walls/roof" or "walls/glass" pairs; this splits them. */
 const pair = (scheme: string): [string, string] => scheme.split("/") as [string, string];
 const glassOf = (name: string): [Hex, Hex] => {
-  const g = GLASSES[name] ?? GLASS;
-  return [g.ramp[3]!, g.ramp[1]!];
+  const t = TINTS[name] ?? TINTS.sky!;
+  return [t.left.streak, t.right.base];
 };
 
 /** Windows on both visible walls of the box u0–u1 × v0–v1, each wall with its own extent. */
@@ -1022,21 +1037,35 @@ function boxWindows(
   };
 }
 
-/** Glass curtain wall: thin mullions and slab lines, a few lit panes. */
+/**
+ * Glass skin for any vertical or sloped face: panes in the tint's base colour,
+ * thin frames every `period` along the wall and every `storey` up, diagonal sky
+ * reflections, and a few lit panes on dark tints.
+ */
 const curtain =
   (ctx: Ctx, g: Material, storey: number, period: number, z0 = 0): Detail =>
   (hit) => {
-    const spot = wallSpot(hit);
-    if (!spot) return null;
-    const s = Math.floor(spot.s);
-    const z = Math.floor(spot.z);
+    if (hit.facing === "top" || hit.facing === "back") return null;
+    const t = tintOf(g);
+    const lit = hit.facing === "left" || (hit.facing !== "right" && hit.n[1] >= hit.n[0]);
+    const side = lit ? t.left : t.right;
+    const s = Math.floor(lit ? hit.p[0] : hit.p[1]);
+    const z = Math.floor(hit.p[2]);
     if (z < z0) return null;
-    if ((z - z0) % storey === 0) return spot.side === "left" ? g.ramp[4]! : g.ramp[2]!;
-    if (s % period === 0) return spot.side === "left" ? g.ramp[2]! : g.ramp[0]!;
-    const n = noise(ctx.seed, spot.side, Math.floor(s / period), Math.floor((z - z0) / storey));
+    if ((z - z0) % storey === 0) return side.frame;
+    if (s % period === 0) return lit ? side.frame : side.streak;
+    const n = noise(
+      ctx.seed,
+      lit ? "l" : "r",
+      Math.floor(s / period),
+      Math.floor((z - z0) / storey),
+    );
     if (ctx.abandoned) return n < 0.4 ? COLORS.board : "2e222f";
-    return n < 0.12 ? COLORS.litWindow : null;
+    if (n < t.lit) return COLORS.litWindow;
+    const band = (((s - Math.floor(z / 2) + 7 * hashOf(ctx.seed)) % 40) + 40) % 40;
+    return lit && band < 6 ? side.streak : side.base;
   };
+const hashOf = (seed: string) => Math.floor(noise(seed, "streak") * 40);
 
 /** A pitched cottage with a chimney, a fenced garden and a path. */
 function cottage(walls: Material, roof: Material, ctx: Ctx, brick = false): Part[] {
@@ -1486,7 +1515,7 @@ function office(tiles: number) {
       if (s < 6 || s >= S - 6) return null;
       const n = noise(ctx.seed, spot.side, Math.floor(s / 4), Math.floor(z / 6));
       if (ctx.abandoned) return n < 0.5 ? COLORS.board : "2e222f";
-      if (n < 0.15) return COLORS.litWindow;
+      if (n < 0.06) return COLORS.litWindow;
       return spot.side === "left" ? glass.ramp[3]! : glass.ramp[1]!;
     };
     return [
@@ -1507,20 +1536,16 @@ function wedge(tiles: number) {
     const v0 = 4;
     const v1 = S - 4;
     const a = (h - 16) / (v1 - v0);
+    const skin = curtain(ctx, g, 4, 3);
+    const t = tintOf(g);
     const core = box(4, v0, 0, S - 4, v1, h) as Extract<ReturnType<typeof box>, { kind: "convex" }>;
     const diagrid: Detail = (hit) => {
       if (hit.facing === "top" || hit.facing === "back") return null;
       const z = hit.p[2];
       const s = hit.facing === "right" ? hit.p[1] : hit.p[0];
-      if (
-        Math.floor(z) % 12 === 0 ||
-        Math.floor(s + z / 2) % 12 === 0 ||
-        Math.floor(s - z / 2 + 120) % 12 === 0
-      )
-        return METAL.ramp[hit.facing === "right" ? 2 : 4]!;
-      const n = noise(ctx.seed, Math.floor(s / 3), Math.floor(z / 4));
-      if (ctx.abandoned) return n < 0.4 ? COLORS.board : null;
-      return n < 0.08 ? COLORS.litWindow : null;
+      if (Math.floor(s + z / 2) % 16 === 0 || Math.floor(s - z / 2 + 160) % 16 === 0)
+        return hit.facing === "right" ? "625565" : lum(t.left.base) > 120 ? "625565" : "c7dcd0";
+      return skin(hit);
     };
     return [
       {
@@ -1754,7 +1779,7 @@ function hospital(ctx: Ctx): Part[] {
       u1,
       v0,
       v1,
-      glass: glassOf("teal"),
+      glass: glassOf("sky"),
       lit: 0.4,
     });
   return [
@@ -2137,7 +2162,7 @@ const MODELS: Model[] = [
     footprint: 2,
     levels: [1, 2, 3],
     lot: "paved",
-    schemes: ["white/teal", "sand/gold", "charcoal/blue", "sage/green"],
+    schemes: ["white/sky", "sand/bronze", "charcoal/blue", "sage/sage"],
     parts: office(2),
   },
   {
@@ -2146,7 +2171,7 @@ const MODELS: Model[] = [
     footprint: 3,
     levels: [1, 2, 3],
     lot: "paved",
-    schemes: ["white/violet", "charcoal/gold", "stone/teal"],
+    schemes: ["white/sky", "charcoal/bronze", "stone/silver"],
     parts: office(3),
   },
   {
@@ -2155,7 +2180,7 @@ const MODELS: Model[] = [
     footprint: 2,
     levels: [2, 3],
     lot: "plaza",
-    schemes: ["blue", "teal"],
+    schemes: ["sky", "blue"],
     parts: wedge(2),
   },
   {
@@ -2164,7 +2189,7 @@ const MODELS: Model[] = [
     footprint: 3,
     levels: [2, 3],
     lot: "plaza",
-    schemes: ["blue", "dark"],
+    schemes: ["sky", "dark"],
     parts: wedge(3),
   },
   {
@@ -2173,7 +2198,7 @@ const MODELS: Model[] = [
     footprint: 2,
     levels: [3],
     lot: "plaza",
-    schemes: ["dark", "gold"],
+    schemes: ["dark", "bronze"],
     parts: blackTower(2),
   },
   {
@@ -2182,7 +2207,7 @@ const MODELS: Model[] = [
     footprint: 4,
     levels: [1, 2, 3],
     lot: "plaza",
-    schemes: ["dark", "violet", "green"],
+    schemes: ["dark", "blue", "sage"],
     parts: blackTower(4),
   },
   {
@@ -2200,7 +2225,7 @@ const MODELS: Model[] = [
     footprint: 4,
     levels: [1, 2, 3],
     lot: "lawn",
-    schemes: ["teal", "green", "silver"],
+    schemes: ["sky", "sage", "silver"],
     parts: campus,
   },
   {

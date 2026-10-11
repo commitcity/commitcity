@@ -1,0 +1,12 @@
+{
+  "id": "civic-capitol-l3",
+  "family": "civic",
+  "footprint": 3,
+  "levels": [3],
+  "views": [0],
+  "symmetric": false,
+  "variants": ["default", "abandoned"],
+  "authors": ["CommitCity contributors"],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

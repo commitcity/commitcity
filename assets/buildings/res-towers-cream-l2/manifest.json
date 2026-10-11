@@ -1,0 +1,12 @@
+{
+  "id": "res-towers-cream-l2",
+  "family": "residential",
+  "footprint": 4,
+  "levels": [2],
+  "views": [0],
+  "symmetric": false,
+  "variants": ["default", "abandoned"],
+  "authors": ["CommitCity contributors"],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

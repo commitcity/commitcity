@@ -1,0 +1,12 @@
+{
+  "id": "modern-black-tower-large-blue-l3",
+  "family": "modern",
+  "footprint": 4,
+  "levels": [3],
+  "views": [0],
+  "symmetric": false,
+  "variants": ["default", "abandoned"],
+  "authors": ["CommitCity contributors"],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

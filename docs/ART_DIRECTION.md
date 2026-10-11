@@ -146,11 +146,13 @@ Proposed initial families:
 
 | Family | Look | Typical footprints |
 |---|---|---|
-| `residential` | Houses and small apartment blocks, pitched roofs, gardens | 1×1, 2×2 |
-| `brick` | Brick offices and shops, flat roofs with AC units | 1×1, 2×2 |
-| `modern` | Glass and concrete offices, towers | 2×2, 3×3 |
-| `industrial` | Warehouses, chimneys, tanks | 2×2, 3×3 |
-| `civic` | Large landmark buildings (domes, columns) | 3×3, 4×4 |
+| `residential` | Houses, cottages, row houses, apartment blocks and slim high-rises, pitched roofs, gardens | 1×1 to 4×4 |
+| `brick` | Brick and stucco cottages, corner stores, row houses, tenements, schools, a station, art-deco towers | 1×1 to 4×4 |
+| `modern` | Modern houses, filling stations, offices, malls, glass towers (round, tapered, dark), campuses | 1×1 to 4×4 |
+| `industrial` | Sheds, water towers, wind turbines, container yards, warehouses, tanks, factories, power plants | 1×1 to 4×4 |
+| `civic` | Monuments, clock towers, chapels, fire stations, libraries, hospitals, capitols, stadiums | 1×1 to 4×4 |
+
+Every family mixes several colour schemes (wall, roof and glass ramps from the palette), so no single colour dominates a district: brick is not only orange and glass is not only blue.
 
 ### 9.1 Levels and size
 

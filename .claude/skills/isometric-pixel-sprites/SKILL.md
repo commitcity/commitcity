@@ -61,7 +61,7 @@ Avoid `ffffff` except as a 1 px sparkle. Shadows lean cool, highlights lean warm
 ## 4. Procedure
 
 1. **Plan the set.** List every sprite with its kind, footprint, height, family, variants and views. Check how many the milestone or issue asks for.
-2. **Use the drawing kit.** Shared helpers (canvas, diamond, ramps, noise, PNG and manifest writer) live in `scripts/art/kit.ts`. Ground, roads and vegetation are drawn in `scripts/art/terrain.ts`, buildings in `scripts/art/buildings.ts`. Add new material ramps to the kit and new styles as data in the generator; never copy helpers between generators.
+2. **Use the drawing kit.** Shared helpers (canvas, diamond, ramps, noise, PNG and manifest writer) live in `scripts/art/kit.ts`. Ground, roads and vegetation are drawn in `scripts/art/terrain.ts`, buildings in `scripts/art/models.ts` (solids ray-cast by `scripts/art/solids.ts`). Add new material ramps to the kit and new styles as data in the generator; never copy helpers between generators.
 3. **Generate deterministically.** No `Math.random`; derive any variation from the sprite's name or an index, so re-running the generator reproduces the same PNGs byte for byte.
 4. **Write assets where the docs say**, with a complete `manifest.json` per building. Code-drawn art made by an AI agent sets `"aiAssisted": true`, and the pull request says how it was made (ART_DIRECTION §14.4).
 5. **Regenerate and validate**: `pnpm art` redraws everything and formats the manifests; `pnpm validate-assets` must pass. Fix the generator, not the PNG.

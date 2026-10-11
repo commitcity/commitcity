@@ -4,7 +4,7 @@ import { repoStream } from "@/core/random";
 import { GENERATOR_VERSION } from "@/core/version";
 import { createBuilding } from "./buildings";
 import { sortRepos } from "./order";
-import { cornerPond, parkLot } from "./parks";
+import { parkLot } from "./parks";
 import { lotAt } from "./spiral";
 import { LOTS_PER_BLOCK } from "./layout";
 import { GROUND_MARGIN, decorateLot, fillGround, roadsAround } from "./surroundings";
@@ -30,14 +30,11 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
       repoStream(input.owner, repo.id, "building"),
     ),
   );
-  // Parks: the unused lots of the last block, and ponds beside small buildings.
+  // Parks fill the unused lots of the last block.
   const lotsInUse = Math.ceil(repos.length / LOTS_PER_BLOCK) * LOTS_PER_BLOCK;
-  const parks = [
-    ...repos.map((_, i) => cornerPond(input.owner, lots[i]!, buildings[i]!)),
-    ...Array.from({ length: lotsInUse - repos.length }, (_, k) =>
-      parkLot(input.owner, lotAt(repos.length + k)),
-    ),
-  ];
+  const parks = Array.from({ length: lotsInUse - repos.length }, (_, k) =>
+    parkLot(input.owner, lotAt(repos.length + k)),
+  );
   const water = new Set(parks.flatMap((park) => park.water.map(({ x, y }) => `${x},${y}`)));
   const decorations = [
     ...repos.flatMap((repo, i) =>

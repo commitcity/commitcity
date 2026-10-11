@@ -1,11 +1,11 @@
 import { DECORATION_VARIANT_COUNT } from "@/core/assets";
-import type { Building, Decoration } from "@/core/model";
+import type { Decoration } from "@/core/model";
 import { hash53 } from "@/core/random";
 import { LOT_SIZE } from "./layout";
 import type { Lot } from "./spiral";
 
 // Parks fill the space buildings leave empty (ARCHITECTURE.md §6.6): the unused
-// lots of the outermost block, and the free corner of lots with a small building.
+// lots of the outermost block.
 // Everything here comes from position hashes, not from repository streams, so a
 // park never shifts the buildings or decorations of a repository.
 
@@ -17,9 +17,6 @@ export interface ParkLayout {
 
 export type ParkStyle = "pond" | "plaza" | "garden";
 const STYLES: readonly ParkStyle[] = ["pond", "plaza", "garden"];
-
-/** Chance that a lot with a small building gets a pond in its free corner. */
-export const POND_CHANCE = 0.35;
 
 const roll = (key: string, n: number) => hash53(key) % n;
 
@@ -80,25 +77,3 @@ export function parkLot(owner: string, lot: Lot): ParkLayout {
   }
   return { water, decorations };
 }
-
-/**
- * A 2 × 2 pond in the free corner of a lot whose building is at most 2 tiles wide,
- * opposite the building. Abandoned lots never get one.
- */
-export function cornerPond(owner: string, lot: Lot, building: Building): ParkLayout {
-  if (building.footprint > 2 || building.variant === "abandoned") return EMPTY;
-  if (hash53(`${owner}:pond:${building.repoId}`) / 2 ** 53 >= POND_CHANCE) return EMPTY;
-  const x0 = building.origin.x === lot.origin.x ? lot.origin.x + 2 : lot.origin.x;
-  const y0 = building.origin.y === lot.origin.y ? lot.origin.y + 2 : lot.origin.y;
-  return {
-    water: [
-      { x: x0, y: y0 },
-      { x: x0 + 1, y: y0 },
-      { x: x0, y: y0 + 1 },
-      { x: x0 + 1, y: y0 + 1 },
-    ],
-    decorations: [],
-  };
-}
-
-const EMPTY: ParkLayout = { water: [], decorations: [] };

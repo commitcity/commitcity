@@ -29,12 +29,13 @@ export function roadsAround(blocks: readonly BlockPosition[]): RoadTile[] {
 /**
  * Ground for every tile in the bounds. The variant comes from a position hash, so
  * ground never depends on repository order. Lots of archived repositories turn to
- * dirt.
+ * dirt, and the tiles in `water` (keys "x,y") become water.
  */
 export function fillGround(
   owner: string,
   bounds: { minX: number; minY: number; maxX: number; maxY: number },
   dirtLots: readonly Lot[],
+  water: ReadonlySet<string> = new Set(),
 ): GroundTile[] {
   const dirt = new Set<string>();
   for (const lot of dirtLots) {
@@ -45,7 +46,8 @@ export function fillGround(
   const ground: GroundTile[] = [];
   for (let y = bounds.minY; y <= bounds.maxY; y++) {
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
-      const kind: GroundKind = dirt.has(`${x},${y}`) ? "dirt" : "grass";
+      const key = `${x},${y}`;
+      const kind: GroundKind = water.has(key) ? "water" : dirt.has(key) ? "dirt" : "grass";
       ground.push({
         x,
         y,

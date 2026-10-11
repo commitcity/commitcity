@@ -307,6 +307,7 @@ All thresholds are **proposals** to be tuned with real data.
 - Roads surround every block that contains at least one occupied lot. Road shapes (straight, corner, T, crossing) are **not** stored; the view layer derives them from neighbors, so they stay correct under rotation. **Confirmed** (milestone 3.1): each road tile gets a 4-bit mask of its view-space neighbors, which picks one of 16 textures.
 - Ground fills the city bounds plus a 2-tile margin, with variants from a position-based hash (`hash(seed, x, y)`), so ground never depends on repository order. Lots of archived repositories are dirt.
 - Decoration is placed only on free tiles of an occupied lot, from that repository's `decoration` stream. Every lot tile draws its numbers whether or not the building covers it, so a building growing never reshuffles the rest of its lot's decoration.
+- Parks fill the space buildings leave empty (generator version 2). The unused lots of the last block become a pond, a plaza with a fountain, or a garden, picked by `hash(owner, lot index)`. Parks use hashes, never repository streams, so they shift nothing else; a park lot simply gives way when a new repository takes it. Water is ground, auto-tiled like roads from a 4-bit mask of water neighbors, and no decoration sits on it.
 
 ### 6.7 Large accounts (> 300 repositories)
 

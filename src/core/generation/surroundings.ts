@@ -29,13 +29,14 @@ export function roadsAround(blocks: readonly BlockPosition[]): RoadTile[] {
 /**
  * Ground for every tile in the bounds. The variant comes from a position hash, so
  * ground never depends on repository order. Lots of archived repositories turn to
- * dirt, and the tiles in `water` (keys "x,y") become water.
+ * dirt, and the tiles in `water` and `pavement` (keys "x,y") take those kinds.
  */
 export function fillGround(
   owner: string,
   bounds: { minX: number; minY: number; maxX: number; maxY: number },
   dirtLots: readonly Lot[],
   water: ReadonlySet<string> = new Set(),
+  pavement: ReadonlySet<string> = new Set(),
 ): GroundTile[] {
   const dirt = new Set<string>();
   for (const lot of dirtLots) {
@@ -47,7 +48,13 @@ export function fillGround(
   for (let y = bounds.minY; y <= bounds.maxY; y++) {
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
       const key = `${x},${y}`;
-      const kind: GroundKind = water.has(key) ? "water" : dirt.has(key) ? "dirt" : "grass";
+      const kind: GroundKind = water.has(key)
+        ? "water"
+        : dirt.has(key)
+          ? "dirt"
+          : pavement.has(key)
+            ? "pavement"
+            : "grass";
       ground.push({
         x,
         y,
@@ -59,13 +66,33 @@ export function fillGround(
   return ground;
 }
 
-const DECORATION_CHANCE = 0.35;
-const LIVELY = ["tree", "tree", "bush", "flowers"] as const;
+const DECORATION_CHANCE = 0.5;
+/** Small homes keep neighbours: houses on the free tiles, as in a real street. */
+const HOMELY = [
+  "tree",
+  "tree",
+  "bush",
+  "flowers",
+  "house-red",
+  "house-blue",
+  "house-green",
+  "house-yellow",
+] as const;
+const LEAFY = ["tree", "tree", "bush", "flowers"] as const;
+/** Offices, industry and civic buildings get parked cars on paved tiles. */
+const BUSY = ["tree", "tree", "bush", "flowers", "car", "car"] as const;
 const ABANDONED = ["weeds", "weeds", "dead-tree"] as const;
+
+function decorationKinds(building: Building): readonly string[] {
+  if (building.variant === "abandoned") return ABANDONED;
+  if (building.family === "residential" || building.family === "brick")
+    return building.footprint <= 2 ? HOMELY : LEAFY;
+  return BUSY;
+}
 
 /** Decoration on the free tiles of one lot, from the repository's decoration stream. */
 export function decorateLot(lot: Lot, building: Building, random: Random): Decoration[] {
-  const kinds = building.variant === "abandoned" ? ABANDONED : LIVELY;
+  const kinds = decorationKinds(building);
   const decorations: Decoration[] = [];
   for (let dy = 0; dy < LOT_SIZE; dy++) {
     for (let dx = 0; dx < LOT_SIZE; dx++) {

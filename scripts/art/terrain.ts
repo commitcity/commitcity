@@ -11,7 +11,18 @@ import {
   noise,
   writeFolder,
 } from "./kit";
-import { type Material, box, cylinder, dome, render } from "./solids";
+import {
+  type Hit,
+  type Material,
+  type Part,
+  box,
+  cylinder,
+  dome,
+  gable,
+  pyramid,
+  render,
+  wallSpot,
+} from "./solids";
 
 const W = 32;
 const H = 16;
@@ -139,10 +150,79 @@ const POOL: Material = { ramp: ["323353", "4d65b4", "4d9be6", "8fd3ff"] };
 const WOOD: Material = { ramp: ["45293f", "6e2727", "9e4539", "cd683d"] };
 const IRON: Material = { ramp: ["2e222f", "3e3546", "484a77", "625565"] };
 
-/** Park props drawn as solids on one tile: fountains, benches and lamps. */
+/** Roof colours of the small filler houses, one decoration kind each. */
+const HOUSE_ROOFS: Record<string, Material> = {
+  "house-red": { ramp: ["6e2727", "9e4539", "ae2334", "e83b3b"] },
+  "house-blue": { ramp: ["323353", "484a77", "484a77", "4d65b4"] },
+  "house-green": { ramp: ["165a4c", "165a4c", "239063", "1ebc73"] },
+  "house-yellow": { ramp: ["9e4539", "cd683d", "f79617", "f9c22b"] },
+};
+const HOUSE_WALLS: Material[] = [
+  { ramp: ["625565", "9babb2", "c7dcd0", "c7dcd0"] },
+  { ramp: ["694f62", "ab947a", "fdcbb0", "fdcbb0"] },
+  { ramp: ["625565", "7f708a", "9babb2", "c7dcd0"] },
+];
+const CAR_PAINT: Material[] = [
+  { ramp: ["6e2727", "ae2334", "e83b3b", "f68181"] },
+  { ramp: ["323353", "484a77", "4d65b4", "4d9be6"] },
+  { ramp: ["625565", "9babb2", "c7dcd0", "c7dcd0"] },
+];
+const GLASS_DARK: Material = { ramp: ["2e222f", "323353", "484a77", "8fd3ff"] };
+
+/** Windows and a door on a small house's walls. */
+const houseFace = (u0: number, u1: number, v0: number, v1: number) => (hit: Hit) => {
+  const spot = wallSpot(hit);
+  if (!spot) return null;
+  const s = Math.floor(spot.s);
+  const z = Math.floor(spot.z);
+  const [a, b] = spot.side === "left" ? [u0, u1] : [v0, v1];
+  if (spot.side === "left" && s === a + 2 && z < 4) return "45293f";
+  if (z >= 2 && z < 4 && (s - a) % 4 === 3 && s < b - 1)
+    return spot.side === "left" ? "8fd3ff" : "484a77";
+  return null;
+};
+
+/** A small filler house: gable, cross gable with a chimney, or hip roof with a garage. */
+function smallHouse(roof: Material, variant: number): Part[] {
+  const walls = HOUSE_WALLS[variant]!;
+  if (variant === 0)
+    return [
+      { solid: box(3, 4, 0, 13, 12, 6), material: walls, detail: houseFace(3, 13, 4, 12) },
+      { solid: gable(2, 3, 14, 13, 6, 5, "u"), material: roof },
+    ];
+  if (variant === 1)
+    return [
+      { solid: box(4, 3, 0, 12, 13, 6), material: walls, detail: houseFace(4, 12, 3, 13) },
+      { solid: gable(3, 2, 13, 14, 6, 5, "v"), material: roof },
+      {
+        solid: box(9, 4, 6, 11, 6, 12),
+        material: { ramp: ["45293f", "6e2727", "9e4539", "cd683d"] },
+      },
+    ];
+  return [
+    { solid: box(2, 3, 0, 10, 11, 7), material: walls, detail: houseFace(2, 10, 3, 11) },
+    { solid: pyramid(1, 2, 11, 12, 7, 5), material: roof },
+    { solid: box(10, 5, 0, 14, 11, 4), material: walls },
+    { solid: box(10, 5, 4, 14, 11, 5), material: roof },
+  ];
+}
+
+/** A parked car along the tile's u axis. */
+function car(variant: number): Part[] {
+  const paint = CAR_PAINT[variant]!;
+  return [
+    { solid: box(3, 6, 0.5, 13, 10, 3), material: paint },
+    { solid: box(5, 6.5, 3, 10, 9.5, 5), material: GLASS_DARK },
+    { solid: box(5.5, 6.5, 5, 9.5, 9.5, 5.5), material: paint },
+  ];
+}
+
+/** Park and street props drawn as solids on one tile: fountains, benches, lamps, houses, cars. */
 function prop(kind: string, variant: number): Canvas {
   const c = new Canvas(W, 80);
-  if (kind === "fountain") {
+  if (kind in HOUSE_ROOFS) render(c, 1, smallHouse(HOUSE_ROOFS[kind]!, variant));
+  else if (kind === "car") render(c, 1, car(variant));
+  else if (kind === "fountain") {
     const r = 6 + variant;
     render(c, 1, [
       { solid: cylinder(8, 8, r, 0, 3), material: STONE },
@@ -379,9 +459,10 @@ for (const kind of ["grass", "dirt", "pavement"] as const) {
     files,
   });
 }
-for (const kind of ["tree", "bush", "flowers", "weeds", "dead-tree", "fountain", "bench", "lamp"]) {
+const PROPS = ["fountain", "bench", "lamp", "car", ...Object.keys(HOUSE_ROOFS)];
+for (const kind of ["tree", "bush", "flowers", "weeds", "dead-tree", ...PROPS]) {
   const files: Record<string, Canvas> = {};
-  const props = ["fountain", "bench", "lamp"];
+  const props = PROPS;
   for (let v = 0; v < DECORATION_VARIANT_COUNT; v++)
     files[`variant-${v}.png`] = props.includes(kind) ? prop(kind, v) : vegetation(kind, v);
   writeFolder({

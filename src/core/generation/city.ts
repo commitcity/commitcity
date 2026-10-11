@@ -4,7 +4,7 @@ import { repoStream } from "@/core/random";
 import { GENERATOR_VERSION } from "@/core/version";
 import { createBuilding } from "./buildings";
 import { sortRepos } from "./order";
-import { parkLot } from "./parks";
+import { parkLot, suburbBlocks, suburbLot, suburbLots } from "./parks";
 import { lotAt } from "./spiral";
 import { LOTS_PER_BLOCK } from "./layout";
 import { GROUND_MARGIN, decorateLot, fillGround, roadsAround } from "./surroundings";
@@ -30,21 +30,32 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
       repoStream(input.owner, repo.id, "building"),
     ),
   );
-  // Parks fill the unused lots of the last block.
-  const lotsInUse = Math.ceil(repos.length / LOTS_PER_BLOCK) * LOTS_PER_BLOCK;
-  const parks = Array.from({ length: lotsInUse - repos.length }, (_, k) =>
-    parkLot(input.owner, lotAt(repos.length + k)),
-  );
-  const water = new Set(parks.flatMap((park) => park.water.map(({ x, y }) => `${x},${y}`)));
-  const decorations = [
-    ...repos.flatMap((repo, i) =>
-      decorateLot(lots[i]!, buildings[i]!, repoStream(input.owner, repo.id, "decoration")),
-    ),
-    ...parks.flatMap((park) => park.decorations),
-  ].filter((d) => !water.has(`${d.x},${d.y}`));
-
   const blocks = new Map(lots.map((lot) => [`${lot.block.x},${lot.block.y}`, lot.block]));
-  const roads = roadsAround([...blocks.values()]);
+  const suburbs = suburbBlocks([...blocks.values()]);
+
+  // Parks fill the unused lots of the last block; small cities get suburbs around them.
+  const lotsInUse = Math.ceil(repos.length / LOTS_PER_BLOCK) * LOTS_PER_BLOCK;
+  const fillers = [
+    ...Array.from({ length: lotsInUse - repos.length }, (_, k) =>
+      parkLot(input.owner, lotAt(repos.length + k)),
+    ),
+    ...suburbs.flatMap(suburbLots).map((lot) => suburbLot(input.owner, lot)),
+  ];
+  const repoDecorations = repos.map((repo, i) =>
+    decorateLot(lots[i]!, buildings[i]!, repoStream(input.owner, repo.id, "decoration")),
+  );
+  const water = new Set(fillers.flatMap((f) => f.water.map(({ x, y }) => `${x},${y}`)));
+  const pavement = new Set(
+    [
+      ...fillers.flatMap((f) => f.pavement),
+      ...repoDecorations.flat().filter((d) => d.kind === "car"),
+    ].map(({ x, y }) => `${x},${y}`),
+  );
+  const decorations = [...repoDecorations.flat(), ...fillers.flatMap((f) => f.decorations)].filter(
+    (d) => !water.has(`${d.x},${d.y}`),
+  );
+
+  const roads = roadsAround([...blocks.values(), ...suburbs]);
 
   const bounds =
     roads.length === 0
@@ -65,6 +76,7 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
     bounds,
     lots.filter((_, i) => repos[i]!.isArchived),
     water,
+    pavement,
   );
 
   return {

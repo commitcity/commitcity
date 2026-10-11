@@ -78,7 +78,8 @@ describe("generateCity", () => {
     );
     for (const building of before.buildings) expect(after.buildings).toContainEqual(building);
     // Parks give way to the new building; repository decorations stay put.
-    for (const decoration of before.decorations.filter((d) => !d.repoId.startsWith("park:")))
+    const filler = (d: { repoId: string }) => /^(park|suburb):/.test(d.repoId);
+    for (const decoration of before.decorations.filter((d) => !filler(d)))
       expect(after.decorations).toContainEqual(decoration);
   });
 
@@ -90,6 +91,15 @@ describe("generateCity", () => {
       model.decorations.filter((d) => d.repoId.startsWith("park:")).map((d) => d.repoId),
     );
     expect(parks.size).toBeGreaterThanOrEqual(Math.min(unused, 1));
+  });
+
+  it("surrounds a small city with suburbs of houses", () => {
+    const model = generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG);
+    const houses = model.decorations.filter(
+      (d) => d.repoId.startsWith("suburb:") && d.kind.startsWith("house-"),
+    );
+    expect(houses.length).toBeGreaterThan(20);
+    expect(findCollisions(model)).toEqual([]);
   });
 
   it("never puts a building, road or decoration on water", () => {

@@ -147,7 +147,7 @@ export function suburbLot(owner: string, lot: FillerLot): ParkLayout {
       if (dx % 2 === px && dy % 2 === py) {
         if (pick < 17) put(HOUSES[r("roof", HOUSES.length)]!);
         else put("tree");
-      } else if (pick < 3) {
+      } else if (pick < 1) {
         put("car");
         pavement.push({ x, y });
       } else if (pick < 10) put("tree");

@@ -80,7 +80,7 @@ const HOMELY = [
 ] as const;
 const LEAFY = ["tree", "tree", "bush", "flowers"] as const;
 /** Offices, industry and civic buildings get parked cars on paved tiles. */
-const BUSY = ["tree", "tree", "bush", "flowers", "car", "car"] as const;
+const BUSY = ["tree", "tree", "bush", "flowers", "car"] as const;
 const ABANDONED = ["weeds", "weeds", "dead-tree"] as const;
 
 function decorationKinds(building: Building): readonly string[] {

@@ -173,7 +173,7 @@ Proposed initial families:
 - **Ground tiles**: grass, dirt, pavement (current scope). Water is auto-tiled like roads, with 16 shapes from a 4-bit neighbor mask: a sand shore on sides without water, ripples on open water. Each with 2–4 random variants to avoid repetition. **Guideline.**
 - **Roads**: one small road type in current scope. Auto-tiled with a 4-bit neighbor mask (16 shapes: straight, corner, T-junction, crossing, dead end, isolated). **Proposal.**
 - **Vegetation**: trees and bushes on 1×1 tiles, several species and sizes; they may slightly overlap neighboring tiles visually but never the footprint of a building. **Guideline.**
-- **Props**: fountains (3 sizes), benches (two directions and a pair) and lamps (single, double, garden) stand on 1×1 tiles in parks, like vegetation. Fences and small signs later. **Guideline.**
+- **Props**: fountains (3 sizes), benches (two directions and a pair) and lamps (single, double, garden) stand on 1×1 tiles in parks, like vegetation. Small filler houses (four roof colours, three shapes) and parked cars (three paints) fill suburbs and free lot tiles; they stay smaller than a 1×1 building so repositories remain the landmarks. Fences and small signs later. **Guideline.**
 
 ## 11. Animation
 

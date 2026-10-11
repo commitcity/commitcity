@@ -1,0 +1,12 @@
+{
+  "id": "brick-store-stone-red-l2",
+  "family": "brick",
+  "footprint": 1,
+  "levels": [2],
+  "views": [0],
+  "symmetric": false,
+  "variants": ["default", "abandoned"],
+  "authors": ["CommitCity contributors"],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

@@ -1,0 +1,12 @@
+{
+  "id": "modern-office-large-charcoal-gold-l2",
+  "family": "modern",
+  "footprint": 3,
+  "levels": [2],
+  "views": [0],
+  "symmetric": false,
+  "variants": ["default", "abandoned"],
+  "authors": ["CommitCity contributors"],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

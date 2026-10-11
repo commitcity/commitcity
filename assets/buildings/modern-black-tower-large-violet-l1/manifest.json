@@ -1,0 +1,12 @@
+{
+  "id": "modern-black-tower-large-violet-l1",
+  "family": "modern",
+  "footprint": 4,
+  "levels": [1],
+  "views": [0],
+  "symmetric": false,
+  "variants": ["default", "abandoned"],
+  "authors": ["CommitCity contributors"],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

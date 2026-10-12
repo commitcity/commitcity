@@ -104,6 +104,25 @@ describe("generateCity", () => {
     expect(b!.facing).toBe(3);
   });
 
+  it("joins every road into one network", () => {
+    for (const input of Object.values(FIXTURES)) {
+      const roads = generateCity(input, PLACEHOLDER_CATALOG).roads;
+      const keys = new Set(roads.map((r) => `${r.x},${r.y}`));
+      const seen = new Set<string>();
+      const queue = roads.slice(0, 1).map((r) => `${r.x},${r.y}`);
+      for (const k of queue) seen.add(k);
+      for (let i = 0; i < queue.length; i++) {
+        const [x, y] = queue[i]!.split(",").map(Number) as [number, number];
+        for (const n of [`${x + 1},${y}`, `${x - 1},${y}`, `${x},${y + 1}`, `${x},${y - 1}`])
+          if (keys.has(n) && !seen.has(n)) {
+            seen.add(n);
+            queue.push(n);
+          }
+      }
+      expect(seen.size).toBe(keys.size);
+    }
+  });
+
   it("stands every building against a road, facing it", () => {
     for (const input of Object.values(FIXTURES)) {
       const model = generateCity(input, PLACEHOLDER_CATALOG);

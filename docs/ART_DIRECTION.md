@@ -151,7 +151,7 @@ Proposed initial families:
 | `modern` | Modern houses, filling stations, offices, malls, glass towers (round, tapered, dark), campuses | 1×1 to 4×4 |
 | `industrial` | Sheds, water towers, wind turbines, container yards, warehouses, tanks, factories, power plants | 1×1 to 4×4 |
 | `civic` | Monuments, clock towers, chapels, fire stations, libraries, hospitals, capitols, stadiums | 1×1 to 4×4 |
-| `village` | Wooden buildings for small towns: log cabins, clapboard cottages, farmhouses with porches, a red barn, a wooden chapel, a general store, a windmill, a farm with crop rows, a log lodge. Horizontal boards (a darker seam every 2 px for siding, 3 px for logs), grass lots without sidewalks, picket fences | 1×1 to 4×4 |
+| `village` | Wooden buildings for small towns: log cabins, clapboard cottages, farmhouses with porches, a red barn, a wooden chapel, a general store, a windmill, a farm with crop rows, a log lodge. Horizontal boards (a darker seam every 2 px for siding, 3 px for logs), no lot of their own: they stand on the city's grass, with no sidewalk or fence that would read as a raised plot | 1×1 to 4×4 |
 
 The `village` family is used only for accounts with 8 or fewer repositories (`ARCHITECTURE.md` §6.3.1), and every footprint needs every level so a village never falls back to a city family.
 

@@ -23,6 +23,81 @@ export function roadAlong(rect: BlockRect, side: Facing): Tile[] {
   return tiles;
 }
 
+/**
+ * Joins road pieces into one network: while there are separate pieces, the
+ * shortest path along `candidates` (the edges of the city's blocks) from the
+ * first piece to any other is paved. Deterministic: the search visits
+ * neighbours in a fixed order and starts from sorted tiles.
+ */
+export function connectRoads(pieces: readonly Tile[], candidates: readonly Tile[]): Tile[] {
+  const road = new Set(pieces.map((t) => at(t.x, t.y)));
+  const open = new Set(candidates.map((t) => at(t.x, t.y)));
+  const parse = (k: string) => k.split(",").map(Number) as [number, number];
+  const steps = [
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+    [0, -1],
+  ] as const;
+  const sorted = (keys: Iterable<string>) =>
+    [...keys].sort((a, b) => {
+      const [ax, ay] = parse(a);
+      const [bx, by] = parse(b);
+      return ay - by || ax - bx;
+    });
+
+  const component = (start: string) => {
+    const seen = new Set([start]);
+    const queue = [start];
+    for (let i = 0; i < queue.length; i++) {
+      const [x, y] = parse(queue[i]!);
+      for (const [dx, dy] of steps) {
+        const k = at(x + dx, y + dy);
+        if (road.has(k) && !seen.has(k)) {
+          seen.add(k);
+          queue.push(k);
+        }
+      }
+    }
+    return seen;
+  };
+
+  for (;;) {
+    const first = sorted(road)[0];
+    if (first === undefined) break;
+    const joined = component(first);
+    if (joined.size === road.size) break;
+    // Breadth-first search from the joined network over free candidate tiles.
+    const from = new Map<string, string | null>();
+    const queue = sorted(joined);
+    for (const k of queue) from.set(k, null);
+    let reached: string | null = null;
+    for (let i = 0; i < queue.length && reached === null; i++) {
+      const [x, y] = parse(queue[i]!);
+      for (const [dx, dy] of steps) {
+        const k = at(x + dx, y + dy);
+        if (from.has(k)) continue;
+        if (road.has(k)) {
+          from.set(k, queue[i]!);
+          reached = k;
+          break;
+        }
+        if (!open.has(k)) continue;
+        from.set(k, queue[i]!);
+        queue.push(k);
+      }
+    }
+    // No path along block edges: leave the rest as it is.
+    if (reached === null) break;
+    for (let k: string | null = from.get(reached)!; k !== null && !joined.has(k); k = from.get(k)!)
+      road.add(k);
+  }
+  return [...road].map((k) => {
+    const [x, y] = parse(k);
+    return { x, y };
+  });
+}
+
 /** Unique road tiles, sorted by y, then x (ARCHITECTURE.md §6.6). */
 export function uniqueRoads(tiles: readonly Tile[]): RoadTile[] {
   const map = new Map<string, RoadTile>();

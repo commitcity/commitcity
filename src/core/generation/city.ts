@@ -9,6 +9,7 @@ import { MAIN_STREET_BLOCK, packBuildings } from "./packing";
 import { isParkBlock, parkBlock } from "./parks";
 import {
   GROUND_MARGIN,
+  connectRoads,
   decorateFree,
   dirtAround,
   fillGround,
@@ -84,8 +85,9 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
   });
 
   // A full block is closed by roads all round. A block still filling up only has
-  // road in front of its buildings, so a small town is a street and not a ring
-  // of asphalt.
+  // road along the sides where it has buildings, so a small town is a street and
+  // not a ring of asphalt. Then the pieces are joined into one network along the
+  // block edges, so no street is left hanging on its own.
   const used = blocks.filter((b) => b.buildings > 0);
   // A park shows once the spiral has grown past it. The main street block fills
   // early, out of spiral order, so it does not count.
@@ -97,21 +99,17 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
     .filter((b) => b.index < last && isParkBlock(owner, b.index))
     .map((b) => ({ rect: b.rect, layout: parkBlock(owner, b.rect, b.index) }));
   const sides = [0, 1, 2, 3] as const;
-  const roads = uniqueRoads([
+  const pieces = [
     ...used.flatMap((b) => {
       const full = !b.hasRoom();
-      return sides.flatMap((s) => {
-        const range = b.usedSides.get(s);
-        if (full) return roadAlong(b.rect, s);
-        if (!range) return [];
-        return roadAlong(b.rect, s).filter((t) => {
-          const along = s === 1 || s === 3 ? t.x : t.y;
-          return along >= range.lo - 1 && along <= range.hi + 1;
-        });
-      });
+      return sides.filter((s) => full || b.usedSides.has(s)).flatMap((s) => roadAlong(b.rect, s));
     }),
     ...parks.flatMap((p) => sides.flatMap((s) => roadAlong(p.rect, s))),
-  ]);
+  ];
+  const edges = [...used.map((b) => b.rect), ...parks.map((p) => p.rect)].flatMap((r) =>
+    sides.flatMap((s) => roadAlong(r, s)),
+  );
+  const roads = uniqueRoads(connectRoads(pieces, edges));
 
   // Bounds: everything built, plus a margin of countryside.
   const xs: number[] = [];

@@ -142,6 +142,9 @@ const all =
 type Lot = "paved" | "lawn" | "yard" | "plaza" | "meadow";
 
 function drawLot(c: Canvas, kind: Lot, abandoned: boolean, seed: string) {
+  // A meadow is the city's own grass: nothing is drawn, so the ground tiles show
+  // through and the building does not seem to stand on a raised plot.
+  if (kind === "meadow" && !abandoned) return;
   const top = c.height - c.width / 2;
   eachDiamondPixel(
     c.width,
@@ -157,13 +160,6 @@ function drawLot(c: Canvas, kind: Lot, abandoned: boolean, seed: string) {
           : (Math.floor(lx / 8) + ly) % 4 === 0
             ? COLORS.sidewalk
             : COLORS.curb;
-      else if (kind === "meadow")
-        color =
-          noise(seed, "meadow", x, y) < 0.03
-            ? RAMPS.dry[3]
-            : noise(seed, "grass", x, y) < 0.12
-              ? RAMPS.foliage[2]
-              : RAMPS.foliage[1];
       else if (kind === "yard")
         color = rim
           ? COLORS.sidewalk
@@ -1906,12 +1902,6 @@ const woodOf = (scheme: string) => {
   return { w: WOODS[w]!, roof: VILLAGE_ROOFS[r]! };
 };
 
-/** A fence of thin rails along the lot's two front edges, `S` units square. */
-const fence = (S: number, from = 1): Part[] => [
-  { solid: box(from, S - 1, 0, S - 1, S - 0.5, 2), material: WOOD, flat: true },
-  { solid: box(S - 1, from, 0, S - 0.5, S - 1, 2), material: WOOD, flat: true },
-];
-
 /** A porch along the left wall: a plank floor, posts and a roof. */
 function porch(
   u0: number,
@@ -1950,7 +1940,7 @@ function cabin(ctx: Ctx): Part[] {
   ];
 }
 
-/** A clapboard cottage, gable end to the street, behind a picket fence. */
+/** A clapboard cottage, gable end to the street. */
 function clapboard(ctx: Ctx): Part[] {
   const { w, roof } = woodOf(ctx.scheme);
   const storeys = Math.min(ctx.level, 2);
@@ -1963,7 +1953,6 @@ function clapboard(ctx: Ctx): Part[] {
     },
     { solid: gable(2, 1, 13, 12, h, 7, "v"), material: roof },
     { solid: box(4, 5, h, 6, 7, h + 8), material: BRICK },
-    ...fence(16),
   ];
   // A lean-to on the right for the bigger ones.
   if (ctx.level === 3)
@@ -1988,7 +1977,6 @@ function farmhouse(ctx: Ctx): Part[] {
     { solid: gable(4, 4, 24, 20, h, 8, "u"), material: roof },
     { solid: box(18, 8, h, 20, 10, h + 10), material: BRICK },
     ...porch(5, 23, 19, 4, 6, roof),
-    ...fence(32),
   ];
   if (ctx.level === 3)
     parts.push(
@@ -2034,7 +2022,6 @@ function barn(ctx: Ctx): Part[] {
     },
     // The gable end is wood too, with the loft door.
     { solid: gable(4, 21.5, 26, 22, h, 10, "v"), material: w.material, detail: loft },
-    ...fence(32),
   ];
   if (ctx.level >= 2)
     parts.push(
@@ -2063,7 +2050,6 @@ function woodChapel(ctx: Ctx): Part[] {
     },
     { solid: pyramid(12.5, 21.5, 19.5, 28.5, steeple, 12), material: roof },
     { solid: box(15.5, 24.5, steeple + 12, 16.5, 25.5, steeple + 16), material: GOLD },
-    ...fence(32),
   ];
 }
 
@@ -2140,11 +2126,10 @@ function windmill(ctx: Ctx): Part[] {
       solid: blade(16, 24, h, turn + (i * Math.PI) / 2, len),
       material: sail,
     })),
-    ...fence(32),
   ];
 }
 
-/** A farm: farmhouse, barn and rows of crops behind a fence. */
+/** A farm: farmhouse, barn and rows of crops. */
 function farm(ctx: Ctx): Part[] {
   const [h0, b0] = pair(ctx.scheme);
   const house = WOODS[h0]!;
@@ -2173,7 +2158,6 @@ function farm(ctx: Ctx): Part[] {
       material: ctx.level === 3 && i % 2 ? ramp(...RAMPS.dry) : HEDGE,
       flat: true,
     });
-  parts.push(...fence(48));
   return parts;
 }
 
@@ -2198,7 +2182,6 @@ function lodge(ctx: Ctx): Part[] {
     { solid: box(10, 12, 0, 13, 16, h + 12), material: STONE },
     { solid: box(48, 12, 0, 51, 16, h + 12), material: STONE },
     ...porch(8, 35, 30, 5, 6, roof),
-    ...fence(64),
   ];
 }
 

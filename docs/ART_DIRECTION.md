@@ -146,11 +146,18 @@ Proposed initial families:
 
 | Family | Look | Typical footprints |
 |---|---|---|
-| `residential` | Houses and small apartment blocks, pitched roofs, gardens | 1×1, 2×2 |
-| `brick` | Brick offices and shops, flat roofs with AC units | 1×1, 2×2 |
-| `modern` | Glass and concrete offices, towers | 2×2, 3×3 |
-| `industrial` | Warehouses, chimneys, tanks | 2×2, 3×3 |
-| `civic` | Large landmark buildings (domes, columns) | 3×3, 4×4 |
+| `residential` | Houses, cottages, row houses, apartment blocks and slim high-rises, pitched roofs, gardens | 1×1 to 4×4 |
+| `brick` | Brick and stucco cottages, corner stores, row houses, tenements, schools, a station, art-deco towers | 1×1 to 4×4 |
+| `modern` | Modern houses, filling stations, offices, malls, glass towers (round, tapered, dark), campuses | 1×1 to 4×4 |
+| `industrial` | Sheds, water towers, wind turbines, container yards, warehouses, tanks, factories, power plants | 1×1 to 4×4 |
+| `civic` | Monuments, clock towers, chapels, fire stations, libraries, hospitals, capitols, stadiums | 1×1 to 4×4 |
+| `village` | Wooden buildings for small towns: log cabins, clapboard cottages, farmhouses with porches, a red barn, a wooden chapel, a general store, a windmill, a farm with crop rows, a log lodge. Horizontal boards (a darker seam every 2 px for siding, 3 px for logs), no lot of their own: they stand on the city's grass, with no sidewalk or fence that would read as a raised plot | 1×1 to 4×4 |
+
+Paved, plaza and yard lots are drawn under a building; a building on grass (a house with a lawn, every village building) draws no lot, so the city's own ground shows and nothing reads as a raised plot.
+
+The `village` family is used only for accounts with 8 or fewer repositories (`ARCHITECTURE.md` §6.3.1), and every footprint needs every level so a village never falls back to a city family.
+
+Every family mixes several colour schemes (wall, roof and glass ramps from the palette), so no single colour dominates a district: brick is not only orange and glass is not only blue.
 
 ### 9.1 Levels and size
 
@@ -170,10 +177,10 @@ Proposed initial families:
 
 ## 10. Ground, roads, and vegetation
 
-- **Ground tiles**: grass, dirt, pavement (current scope); water and shoreline later. Each with 2–4 random variants to avoid repetition. **Guideline.**
+- **Ground tiles**: grass, dirt, pavement (current scope). Water is auto-tiled like roads, with 16 shapes from a 4-bit neighbor mask: a sand shore on sides without water, ripples on open water. Each with 2–4 random variants to avoid repetition. **Guideline.**
 - **Roads**: one small road type in current scope. Auto-tiled with a 4-bit neighbor mask (16 shapes: straight, corner, T-junction, crossing, dead end, isolated). **Proposal.**
 - **Vegetation**: trees and bushes on 1×1 tiles, several species and sizes; they may slightly overlap neighboring tiles visually but never the footprint of a building. **Guideline.**
-- **Props**: benches, lamps, fences, small signs. Optional decoration chosen deterministically by the generator. **Later.**
+- **Props**: fountains (3 sizes), benches (two directions and a pair) and lamps (single, double, garden) stand on 1×1 tiles in parks, like vegetation. Fences and small signs later. **Guideline.**
 
 ## 11. Animation
 

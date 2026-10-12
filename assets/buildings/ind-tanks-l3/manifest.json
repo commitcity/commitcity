@@ -1,0 +1,12 @@
+{
+  "id": "ind-tanks-l3",
+  "family": "industrial",
+  "footprint": 2,
+  "levels": [3],
+  "views": [0],
+  "symmetric": false,
+  "variants": ["default", "abandoned"],
+  "authors": ["CommitCity contributors"],
+  "license": "CC-BY-SA-4.0",
+  "aiAssisted": true
+}

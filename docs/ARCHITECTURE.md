@@ -234,51 +234,54 @@ CityInput
   → normalize & sort repos (createdAt, id)
   → select individual repos (≤ 300) and aggregates
   → map each repo to building attributes (family, footprint, level, variant)
-  → assign each repo a lot (chronological spiral)
-  → place building and lot decoration inside each lot
-  → lay roads around occupied blocks
-  → fill ground
+  → pack buildings side by side along the streets (chronological spiral of blocks)
+  → choose each building's drawing, avoiding its neighbours' drawings
+  → lay roads, parks, ground and nature
   → CityModel
 ```
 
-### 6.2 City grid: lots and blocks
+### 6.2 City grid: streets and blocks
 
-The city is a grid of **blocks**. Each block contains **2 × 2 lots**, and each lot is **4 × 4 tiles**. Blocks are separated by 1-tile roads.
+The city is a grid of **blocks** of different sizes, separated by 1-tile roads. Every column of blocks has its own width and every row its own depth, from 4 to 10 tiles, picked by `hash(owner, axis, index)`; the center block is at least 6 × 6. Blocks are therefore rectangles of many shapes, not identical squares. Implemented in `src/core/generation/grid.ts` (generator version 3).
 
 ```
- R R R R R R R R R R
- R [lot][lot] R [lot]…
- R [lot][lot] R
- R R R R R R R R R R
+ R R R R R R R R R R R R R
+ R [b][b][b] R [b][b][b][b] R …
+ R  .  .  .  R [b]        R
+ R [b][b]    R [b][b][b][b] R
+ R R R R R R R R R R R R R
 ```
 
-- Block interior: 8 × 8 tiles. Block period including the road: 9 tiles. **Proposal.**
-- Every repository receives **exactly one lot**, regardless of its building size. **Proposal.**
-- A 4 × 4 lot fits any allowed footprint (1–4). The building sits in the lot's outer corner, against both roads that border the lot, and faces one of them (chosen from its random stream); the rest of the lot is filled with deterministic **lot decoration** belonging to that repository (gardens, trees, parking, sheds), chosen from its own random stream.
+- **Buildings stand side by side.** Each building occupies only its own footprint. A block is filled around its edge: along the front-left side, then front-right, back-right and back-left, each building taking the first free spot against the road where its footprint fits, facing that road. Across the road, the next block does the same, so streets get a building on each side and tall buildings form a skyline. Implemented in `src/core/generation/packing.ts`.
+- About one building in eight keeps a one-tile garden beside it (`hash(owner, repo id)`), so a street is not a solid wall.
+- The space behind the buildings in a block is a backyard: grass and the occasional grove.
 
-**Why one fixed-size lot per repository?** It makes placement depend *only* on creation order. A repository growing from a 2×2 to a 3×3 building never moves any other building. This is the core stability guarantee and makes timelapse trivial.
-
-**Trade-off:** small buildings get large lots, so the city is less dense than a tightly packed layout. Lot decoration compensates visually. The alternative, variable-size packing, is denser but any size change would move later buildings. See §12.
+**Trade-off (generator version 3):** packing makes the city dense and city-like, but a building that grows (more stars) can push the buildings placed after it. Version 2 gave every repository a fixed 4 × 4 lot so that nothing ever moved, at the cost of a sparse grid of identical lots; the owner chose density. See `docs/decisions/0002-*` and §12.
 
 ### 6.3 Placement order: chronological spiral
 
 1. Repositories are sorted by `createdAt`, then `id`.
-2. Lots are enumerated in a fixed **spiral order**: blocks by ring distance from the center (`max(|bx|, |by|)`), then clockwise on screen (at orientation 0) starting from the ring's back corner `(-r, -r)` and moving along +x, +y, -x, -y; within a block, lots go back, right, front, left. Block (0, 0) is centered on the world origin. Implemented in `src/core/generation/spiral.ts`.
-3. The *n*-th repository gets the *n*-th lot.
+2. **Main street first.** The first buildings line both sides of the road between the center block and the block in front of it, taking turns from one side to the other, until that street is full. A town of a few repositories is one short street with houses facing each other.
+3. Every other building goes to the first block, in **spiral order**, with room for its footprint: blocks by ring distance from the center (`max(|bx|, |by|)`), then clockwise on screen (at orientation 0) starting from the ring's back corner `(-r, -r)` and moving along +x, +y, -x, -y. Implemented in `src/core/generation/spiral.ts`.
+4. A block marked as a park (§6.6) is skipped.
 
 Result: the oldest repositories form the city center, and the city grows outward like tree rings.
 
-**Stability guarantees (Confirmed):**
+**Stability guarantees (generator version 3):**
 
 | Change | Effect |
 |---|---|
-| New repository created | Placed in the next lot. Nothing else moves. |
-| Repository gets more stars or commits | Its own building changes size, level, or type. Nothing else moves. |
-| Repository archived | Its own building becomes `abandoned`. Nothing else moves. |
-| Repository deleted, or data scope changed | Newer repositories shift by one lot. *Accepted limitation* (see §12). |
+| New repository created | Placed after all existing ones. Nothing else moves. |
+| Repository gets more commits, or is archived | Its own building changes level or condition. Nothing else moves. |
+| Repository gets more stars and its footprint changes | Its building changes size; buildings placed after it may move. *Accepted* (see `docs/decisions/0002-*`). |
+| Repository deleted, or data scope changed | Newer repositories may move. *Accepted limitation* (see §12). |
 | `generatorVersion` changes | The city may change. Documented in release notes. |
 
-**Timelapse:** a city at date `T` is generated from the repositories with `createdAt ≤ T`. Because of the spiral order, every building is at the same position at every date.
+**Timelapse:** a city at date `T` is generated from the repositories with `createdAt ≤ T`. Because placement only depends on earlier repositories, every building keeps its position at every later date, as long as footprints do not change.
+
+### 6.3.1 Villages
+
+An account with **8 or fewer** repositories is a **village**: every building is drawn from the `village` family (wooden cabins, cottages, farmhouses, a barn, a chapel, a general store, a windmill, a farm and a lodge), whatever its language. The ninth repository turns the village into a town, and buildings take their language families again. The `village` family is never chosen for an unknown language.
 
 ### 6.4 Districts
 
@@ -295,18 +298,20 @@ All thresholds are **proposals** to be tuned with real data.
 |---|---|
 | **Footprint** | From stars on a log scale: 0–9 → 1, 10–99 → 2, 100–999 → 3, ≥ 1000 → 4. |
 | **Level** | From `commitCount`: < 50 → 1, < 500 → 2, ≥ 500 → 3. If `commitCount` is unknown, level 1. |
-| **Family** | From `primaryLanguage` through a mapping table (for example web languages → `modern`, systems languages → `industrial`, scripting languages → `brick`, documentation/config → `residential`). Unknown languages: chosen from the repository's random stream. |
+| **Family** | From `primaryLanguage` through a mapping table (for example web languages → `modern`, systems languages → `industrial`, scripting languages → `brick`, documentation/config → `residential`). Unknown languages: chosen from the repository's random stream, never `village`. In a village (§6.3.1) every building is `village`. |
 | **Variant** | `abandoned` if archived, otherwise `default`. |
 | **Annex** | Forks: footprint reduced by one (minimum 1) and `isAnnex = true`. |
 | **Manifest** | Chosen among manifests matching family, footprint, level, and variant (see below). If none match, relax family first, then level. A placeholder exists for every footprint, so the search always succeeds. |
 
 **Manifest choice uses rendezvous hashing (Proposal):** each candidate manifest gets a score `hash(repoSeed + manifest.id)` and the highest score wins. When artists add a new building type, only a small fraction of buildings switch to it, instead of the whole city reshuffling as a simple `hash % count` would cause.
 
-### 6.6 Roads, ground, and decoration
+### 6.6 Roads, ground, nature and parks
 
-- Roads surround every block that contains at least one occupied lot. Road shapes (straight, corner, T, crossing) are **not** stored; the view layer derives them from neighbors, so they stay correct under rotation. **Confirmed** (milestone 3.1): each road tile gets a 4-bit mask of its view-space neighbors, which picks one of 16 textures.
-- Ground fills the city bounds plus a 2-tile margin, with variants from a position-based hash (`hash(seed, x, y)`), so ground never depends on repository order. Lots of archived repositories are dirt.
-- Decoration is placed only on free tiles of an occupied lot, from that repository's `decoration` stream. Every lot tile draws its numbers whether or not the building covers it, so a building growing never reshuffles the rest of its lot's decoration.
+- **Roads.** A full block is closed by roads on all four sides. A block still filling up only has road in front of its buildings (one tile beyond each end), so a small town is a street and not a ring of asphalt. Road shapes (straight, corner, T, crossing) are **not** stored; the view layer derives them from neighbors, so they stay correct under rotation. **Confirmed** (milestone 3.1): each road tile gets a 4-bit mask of its view-space neighbors, which picks one of 16 textures.
+- **Ground** fills the city bounds (everything built plus a 2-tile margin, 3 for a village), with variants from a position-based hash (`hash(seed, x, y)`), so ground never depends on repository order. Free tiles next to an abandoned building are dirt.
+- **Nature.** Trees grow in a few **groves**: the world is cut into 6 × 6 cells, and a cell holds a small round grove around a hashed center with a low chance (lower inside blocks than in the countryside). Elsewhere only a rare bush or flowers. Gardens between buildings get flowers, bushes or a tree; dirt gets weeds. Everything is a position hash, so nature never depends on repository order; it only gives way where a building or road now stands.
+- **Parks.** About one block in ten holds no repository and becomes a park: a pond with a shore, a garden with a fountain, or, on small blocks, a paved plaza. Never one of the first four blocks or the main street, and never two within five blocks of each other in the spiral. A park only appears once the city has grown past it, so a village has none. Water is ground, auto-tiled like roads from a 4-bit mask of water neighbors, and no decoration sits on it.
+- **No repeated skylines.** Each building chooses its drawing (§6.5) after the buildings placed before it, with a penalty for the same drawing within 8 tiles and for the same model in other colours within 3 tiles, closer repeats weighing more. Candidates with the lowest penalty compete by rendezvous score.
 
 ### 6.7 Large accounts (> 300 repositories)
 
@@ -314,7 +319,7 @@ As decided in `VISION.md`, up to 300 repositories are individual buildings (the 
 
 ### 6.8 Collision handling
 
-Collisions are avoided by construction: lots never overlap, buildings never exceed their lot, roads only occupy road tiles, and decoration only occupies free lot tiles. The generator still verifies the invariant **"no two occupants share a tile"** in tests (and in development builds), so a bug fails loudly instead of rendering overlaps.
+Collisions are avoided by construction: buildings are packed into free block tiles only, roads only occupy road tiles, and decoration only occupies free tiles. The generator still verifies the invariant **"no two occupants share a tile"** in tests (and in development builds), so a bug fails loudly instead of rendering overlaps.
 
 ### 6.9 Rotation compatibility
 
@@ -427,7 +432,7 @@ The individual-building limit (300) is adjusted to whatever these targets allow.
 |---|---|---|---|
 | Pure generation separated from rendering | Generator inside the renderer | Testable, reusable on the server (preview images), workable in a Web Worker | Confirmed |
 | PixiJS used imperatively | @pixi/react; Canvas 2D; Phaser | Control over sorting, culling, and performance; React stays for UI | Confirmed |
-| One fixed 4×4 lot per repository | Variable-size bin packing | Strongest stability and trivial timelapse, at the cost of density | Proposal |
+| Buildings packed side by side in blocks of varied sizes (v3) | One fixed 4×4 lot per repository (v1–v2) | A city that reads like a city builder; a growing footprint can move later buildings | Confirmed by the owner |
 | Chronological spiral placement | Placement by language district; random placement | Stable, meaningful ("old code in the center"), timelapse-friendly | Proposal |
 | Deleted repositories shift newer ones | Persisting positions in a database | Avoids a database; deletion is rare | Proposal |
 | Language → style, not position | Spatial language districts | Keeps placement stable; districts can come later | Proposal |
@@ -441,7 +446,7 @@ These decisions will be recorded as short ADRs in `docs/decisions/` when they ar
 
 1. Does PixiJS meet the performance targets with real-sized atlases on mobile? *(First milestone.)*
 2. Does front-corner depth sorting hold up with tall buildings in the test scene, or do we need sprite slicing? *(First milestone.)*
-3. Is the 4×4 lot too sparse visually? If so, should small buildings share lots, accepting weaker stability?
+3. ~~Is the 4×4 lot too sparse visually?~~ Yes: replaced by packed streets in generator version 3 (§6.2).
 4. Which activity signal do we use if commit counts are too expensive to fetch?
 5. How do we store history for a timelapse that shows growth, not only creation?
 6. Do we want spatial language districts later, and how do they coexist with chronological placement?

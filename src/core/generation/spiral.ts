@@ -1,27 +1,7 @@
-import { LOTS_PER_BLOCK, LOT_SIZE, blockOrigin } from "./layout";
-
 export interface BlockPosition {
   x: number;
   y: number;
 }
-
-export interface Lot {
-  /** Position in the spiral: the n-th repository gets lot n. */
-  index: number;
-  block: BlockPosition;
-  /** Lot within its block, each 0 or 1. */
-  cell: { x: number; y: number };
-  /** World tile of the lot's back (top) corner. The lot covers LOT_SIZE × LOT_SIZE tiles. */
-  origin: { x: number; y: number };
-}
-
-/** Lot order within a block: back, right, front, left (clockwise on screen at orientation 0). */
-const CELLS: readonly { x: number; y: number }[] = [
-  { x: 0, y: 0 },
-  { x: 1, y: 0 },
-  { x: 1, y: 1 },
-  { x: 0, y: 1 },
-];
 
 /** Ring of a block: its Chebyshev distance from the center block. */
 export function blockRing(block: BlockPosition): number {
@@ -54,18 +34,4 @@ export function blockAt(index: number): BlockPosition {
     default:
       return { x: -ring, y: ring - along };
   }
-}
-
-/** The n-th lot of the spiral. */
-export function lotAt(index: number): Lot {
-  if (!Number.isInteger(index) || index < 0) throw new RangeError(`Invalid lot index ${index}`);
-  const block = blockAt(Math.floor(index / LOTS_PER_BLOCK));
-  const cell = CELLS[index % LOTS_PER_BLOCK]!;
-  const base = blockOrigin(block);
-  return {
-    index,
-    block,
-    cell: { ...cell },
-    origin: { x: base.x + cell.x * LOT_SIZE, y: base.y + cell.y * LOT_SIZE },
-  };
 }

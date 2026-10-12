@@ -8,13 +8,15 @@ import {
 import type { RepoInput } from "@/core/model";
 import { createRandom } from "@/core/random";
 import {
+  buildingTraits,
   chooseManifest,
   createBuilding,
+  designOf,
   familyFromLanguage,
+  modelOf,
   footprintFromStars,
   levelFromCommits,
 } from "./buildings";
-import { lotAt } from "./spiral";
 
 const repo: RepoInput = {
   id: "R_1",
@@ -88,34 +90,62 @@ describe("chooseManifest", () => {
   });
 });
 
-describe("createBuilding", () => {
-  const build = (overrides: Partial<RepoInput>, lotIndex = 0) =>
-    createBuilding(
-      "owner",
-      { ...repo, ...overrides },
-      lotAt(lotIndex),
-      PLACEHOLDER_CATALOG,
-      createRandom("b"),
-    );
+describe("buildingTraits", () => {
+  const traits = (overrides: Partial<RepoInput>, village = false) =>
+    buildingTraits({ ...repo, ...overrides }, createRandom("b"), village);
 
   it("turns forks into annexes one size smaller", () => {
-    expect(build({ isFork: true, stars: 150 })).toMatchObject({ isAnnex: true, footprint: 2 });
-    expect(build({ isFork: true, stars: 0 })).toMatchObject({ isAnnex: true, footprint: 1 });
+    expect(traits({ isFork: true, stars: 150 })).toMatchObject({ isAnnex: true, footprint: 2 });
+    expect(traits({ isFork: true, stars: 0 })).toMatchObject({ isAnnex: true, footprint: 1 });
   });
 
   it("marks archived repositories as abandoned", () => {
-    expect(build({ isArchived: true }).variant).toBe("abandoned");
-    expect(build({}).variant).toBe("default");
+    expect(traits({ isArchived: true }).variant).toBe("abandoned");
+    expect(traits({}).variant).toBe("default");
   });
 
-  it("stands in the lot's outer corner and faces a bordering road", () => {
-    for (let index = 0; index < 4; index++) {
-      const lot = lotAt(index);
-      const b = build({ stars: 150 }, index);
-      expect(b.origin.x).toBe(lot.cell.x === 1 ? lot.origin.x + 1 : lot.origin.x);
-      expect(b.origin.y).toBe(lot.cell.y === 1 ? lot.origin.y + 1 : lot.origin.y);
-      const roadSides = [lot.cell.x === 1 ? 0 : 2, lot.cell.y === 1 ? 1 : 3];
-      expect(roadSides).toContain(b.facing);
-    }
+  it("draws every building of a village from the village family", () => {
+    expect(traits({}, true).family).toBe("village");
+    expect(traits({ primaryLanguage: "Rust" }, true).family).toBe("village");
+    expect(traits({}).family).toBe("modern");
+  });
+
+  it("never picks the village family for an unknown language", () => {
+    for (let i = 0; i < 200; i++)
+      expect(familyFromLanguage(null, createRandom(`v${i}`))).not.toBe("village");
+  });
+});
+
+describe("createBuilding", () => {
+  const traits = buildingTraits({ ...repo, stars: 150 }, createRandom("b"));
+  const placement = { origin: { x: 3, y: -2 }, facing: 1 as const };
+
+  it("stands where it was placed and faces that road", () => {
+    const b = createBuilding("owner", repo, traits, placement, PLACEHOLDER_CATALOG);
+    expect(b).toMatchObject({ origin: { x: 3, y: -2 }, facing: 1, footprint: 3 });
+  });
+
+  it("steers away from penalised drawings while another fits", () => {
+    const catalog = createCatalog([
+      ...PLACEHOLDER_MANIFESTS,
+      { ...PLACEHOLDER_MANIFESTS[0]!, id: "modern-a", family: "modern", footprint: 3 },
+      { ...PLACEHOLDER_MANIFESTS[0]!, id: "modern-b", family: "modern", footprint: 3 },
+    ]);
+    const free = createBuilding("owner", repo, traits, placement, catalog).manifestId;
+    const other = createBuilding("owner", repo, traits, placement, catalog, (m) =>
+      m.id === free ? 1 : 0,
+    ).manifestId;
+    expect(other).not.toBe(free);
+    expect(catalog.buildings.find((m) => m.id === other)).toMatchObject({
+      family: "modern",
+      footprint: 3,
+    });
+  });
+});
+
+describe("designOf and modelOf", () => {
+  it("strip the level, then the colours", () => {
+    expect(designOf("brick-store-plum-brown-l2")).toBe("brick-store-plum-brown");
+    expect(modelOf("brick-store-plum-brown-l2")).toBe("brick-store");
   });
 });

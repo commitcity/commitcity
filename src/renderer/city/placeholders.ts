@@ -49,12 +49,19 @@ const FAMILY_SCHEMES: Record<Family, Scheme> = {
     right: [190, 184, 170],
     window: [120, 150, 170],
   },
+  village: {
+    roof: [110, 39, 39],
+    left: [205, 104, 61],
+    right: [158, 69, 57],
+    window: [251, 185, 84],
+  },
 };
 
 const GROUND: Record<string, Rgb> = {
   grass: [86, 140, 72],
   dirt: [140, 110, 74],
   pavement: [150, 150, 146],
+  water: [70, 120, 190],
 };
 
 const ASPHALT: Rgb = [84, 86, 96];
@@ -110,6 +117,7 @@ export class CityPlaceholders {
     const [kind, a, b] = key.split("/");
     if (kind === "ground") return this.ground(a ?? "grass", Number(b));
     if (kind === "road") return this.road(Number(a));
+    if (kind === "water") return this.ground("water", 0);
     if (kind === "decoration") return this.decoration(a ?? "tree", Number(b));
     const building = parseBuildingKey(key);
     const manifest = building && this.families.get(building.manifestId);

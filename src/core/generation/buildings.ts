@@ -7,8 +7,6 @@ import {
 } from "@/core/assets";
 import type { Building, Facing, Footprint, RepoInput } from "@/core/model";
 import { type Random, hash53, repoSeed } from "@/core/random";
-import { LOT_SIZE } from "./layout";
-import type { Lot } from "./spiral";
 
 // Repository-to-building mapping (ARCHITECTURE.md §6.5). Thresholds are proposals
 // to tune with real data; changing any of them changes generated cities, so bump
@@ -76,23 +74,40 @@ const LANGUAGE_FAMILIES: Readonly<Record<string, Family>> = {
   YAML: "residential",
 };
 
+/** Families a language can map to; the village family is for small towns only. */
+const CITY_FAMILIES = FAMILIES.filter((f) => f !== "village");
+
 /** Family from the language table; unknown or missing languages draw from the repo's stream. */
 export function familyFromLanguage(language: string | null, random: Random): Family {
   const known = language === null ? undefined : LANGUAGE_FAMILIES[language];
-  return known ?? random.pick(FAMILIES);
+  return known ?? random.pick(CITY_FAMILIES);
 }
+
+/**
+ * Accounts with this many public repositories or fewer are a village: every
+ * building is drawn from the village family (wooden houses, a barn, a chapel),
+ * whatever its language. The next repository turns the village into a town.
+ */
+export const VILLAGE_MAX_REPOS = 8;
+
+/** A drawing without its level suffix: "brick-store-plum-brown-l2" → "brick-store-plum-brown". */
+export const designOf = (manifestId: string) => manifestId.replace(/-l\d+$/, "");
+/** The model a drawing belongs to, whatever its colours: "brick-store-plum-brown-l2" → "brick-store". */
+export const modelOf = (manifestId: string) => manifestId.split("-").slice(0, 2).join("-");
 
 /**
  * Picks the manifest for a building with rendezvous hashing: every candidate gets
  * the score `hash(repoSeed + manifest.id)` and the highest wins. Adding a manifest
  * only takes over the buildings where it scores highest. If nothing matches, the
  * family requirement is relaxed first, then the level. The footprint is never
- * relaxed.
+ * relaxed. `penalty` ranks candidates first (lowest wins), so a building can
+ * steer away from its neighbours' drawings while any other candidate is left.
  */
 export function chooseManifest(
   catalog: AssetCatalog,
   seed: string,
   wanted: { family: Family; footprint: Footprint; level: number; variant: Variant },
+  penalty: (manifest: BuildingManifest) => number = () => 0,
 ): BuildingManifest {
   const fits = (m: BuildingManifest, family: boolean, level: boolean) =>
     m.footprint === wanted.footprint &&
@@ -106,7 +121,13 @@ export function chooseManifest(
     [false, false],
   ] as const) {
     const candidates = catalog.buildings.filter((m) => fits(m, family, level));
-    if (candidates.length > 0) return highestScore(candidates, seed);
+    if (candidates.length === 0) continue;
+    const scored = candidates.map((m) => ({ m, p: penalty(m) }));
+    const least = Math.min(...scored.map((c) => c.p));
+    return highestScore(
+      scored.filter((c) => c.p === least).map((c) => c.m),
+      seed,
+    );
   }
   throw new Error(
     `No manifest in catalog ${catalog.version} has footprint ${wanted.footprint} and variant "${wanted.variant}"`,
@@ -126,48 +147,48 @@ function highestScore(candidates: BuildingManifest[], seed: string): BuildingMan
   return best;
 }
 
-/**
- * Builds the building for one repository on its lot. The building stands in the
- * lot's outer corner, against both roads that border the lot, and faces one of
- * them. The rest of the lot is left for decoration.
- */
+/** What a repository looks like before it has a place: family, size, level, condition. */
+export interface BuildingTraits {
+  family: Family;
+  footprint: Footprint;
+  level: number;
+  variant: Variant;
+  isAnnex: boolean;
+}
+
+export function buildingTraits(repo: RepoInput, random: Random, village = false): BuildingTraits {
+  const language = familyFromLanguage(repo.primaryLanguage, random);
+  const family: Family = village ? "village" : language;
+  const isAnnex = repo.isFork;
+  const base = footprintFromStars(repo.stars);
+  return {
+    family,
+    footprint: (isAnnex ? Math.max(1, base - 1) : base) as Footprint,
+    level: levelFromCommits(repo.commitCount),
+    variant: repo.isArchived ? "abandoned" : "default",
+    isAnnex,
+  };
+}
+
+/** The building for one repository at its place along a street, facing that street. */
 export function createBuilding(
   owner: string,
   repo: RepoInput,
-  lot: Lot,
+  traits: BuildingTraits,
+  placement: { origin: { x: number; y: number }; facing: Facing },
   catalog: AssetCatalog,
-  random: Random,
+  penalty?: (manifest: BuildingManifest) => number,
 ): Building {
-  const family = familyFromLanguage(repo.primaryLanguage, random);
-  const isAnnex = repo.isFork;
-  const base = footprintFromStars(repo.stars);
-  const footprint = (isAnnex ? Math.max(1, base - 1) : base) as Footprint;
-  const level = levelFromCommits(repo.commitCount);
-  const variant: Variant = repo.isArchived ? "abandoned" : "default";
-
-  // Cell x 1 borders the +x road, cell x 0 the -x road; the same for y.
-  const sideX: Facing = lot.cell.x === 1 ? 0 : 2;
-  const sideY: Facing = lot.cell.y === 1 ? 1 : 3;
-  const facing = random.chance(0.5) ? sideX : sideY;
-
-  const manifest = chooseManifest(catalog, repoSeed(owner, repo.id), {
-    family,
-    footprint,
-    level,
-    variant,
-  });
+  const manifest = chooseManifest(catalog, repoSeed(owner, repo.id), traits, penalty);
   return {
     repoId: repo.id,
     manifestId: manifest.id,
-    origin: {
-      x: lot.cell.x === 1 ? lot.origin.x + LOT_SIZE - footprint : lot.origin.x,
-      y: lot.cell.y === 1 ? lot.origin.y + LOT_SIZE - footprint : lot.origin.y,
-    },
-    footprint,
-    family,
-    facing,
-    level,
-    variant,
-    isAnnex,
+    origin: { ...placement.origin },
+    footprint: traits.footprint,
+    family: traits.family,
+    facing: placement.facing,
+    level: traits.level,
+    variant: traits.variant,
+    isAnnex: traits.isAnnex,
   };
 }

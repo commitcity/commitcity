@@ -11,6 +11,7 @@ import {
   noise,
   writeFolder,
 } from "./kit";
+import { type Material, box, cylinder, dome, render } from "./solids";
 
 const W = 32;
 const H = 16;
@@ -96,6 +97,122 @@ function road(mask: number): Canvas {
     }
   }
   return c;
+}
+
+/**
+ * One water shape. Mask bits as for roads: sides without water get a shore that
+ * fades from the grass at the tile edge through wet sand to deep water; the open
+ * water carries a few ripples that never touch the edges, so tiles join cleanly.
+ */
+function water(mask: number): Canvas {
+  const c = new Canvas(W, H);
+  const has = (side: number) => (mask & (1 << side)) !== 0;
+  const [deep, body, ripple, sparkle] = ["323353", "4d65b4", "4d9be6", "8fd3ff"];
+  eachDiamondPixel(W, (x, y, { top, bottom }) => {
+    const right = x >= W / 2;
+    const fromTop = y - top;
+    const fromBottom = bottom - y;
+    const shore = (side: number, d: number) => (has(side) ? Infinity : d);
+    const d = Math.min(shore(right ? 3 : 2, fromTop), shore(right ? 0 : 1, fromBottom));
+    let color: Hex;
+    if (d === 0) color = RAMPS.foliage[1];
+    else if (d === 1) color = RAMPS.sand[3];
+    else if (d === 2) color = RAMPS.sand[2];
+    else if (d === 3) color = deep;
+    else {
+      const n = noise("water", mask, x, y);
+      color = n < 0.05 && x % 2 === 0 ? ripple : n < 0.06 ? sparkle : body;
+    }
+    c.set(x, y, color);
+  });
+  // A ripple line or two, well inside the tile.
+  for (let i = 0; i < 2; i++) {
+    const x = 10 + Math.floor(noise("ripple-x", mask, i) * 10);
+    const y = 6 + Math.floor(noise("ripple-y", mask, i) * 4);
+    for (let k = 0; k < 3; k++) if (c.get(x + k, y) === body) c.set(x + k, y, ripple);
+  }
+  return c;
+}
+
+const STONE: Material = { ramp: ["625565", "7f708a", "9babb2", "c7dcd0"] };
+const POOL: Material = { ramp: ["323353", "4d65b4", "4d9be6", "8fd3ff"] };
+const WOOD: Material = { ramp: ["45293f", "6e2727", "9e4539", "cd683d"] };
+const IRON: Material = { ramp: ["2e222f", "3e3546", "484a77", "625565"] };
+
+/** Park props drawn as solids on one tile: fountains, benches and lamps. */
+function prop(kind: string, variant: number): Canvas {
+  const c = new Canvas(W, 80);
+  if (kind === "fountain") {
+    const r = 6 + variant;
+    render(c, 1, [
+      { solid: cylinder(8, 8, r, 0, 3), material: STONE },
+      { solid: cylinder(8, 8, r - 1.2, 0, 3.01), material: POOL, flat: true },
+      { solid: cylinder(8, 8, 1, 3, 9 + variant * 2), material: STONE },
+      { solid: cylinder(8, 8, 2.5, 8 + variant * 2, 9 + variant * 2), material: STONE },
+      ...(variant === 2 ? [{ solid: dome(8, 8, 11, 1.5), material: STONE }] : []),
+    ]);
+    // Spray falling from the top bowl, lit on the left.
+    const top = c.height - 8 - 9 - variant * 2;
+    for (let i = -3; i <= 3; i++) {
+      if (i === 0) continue;
+      const x = W / 2 + i * 2 - (i > 0 ? 1 : 0);
+      for (let k = 0; k < 3 + Math.abs(i); k++)
+        c.set(x, top - 2 + k + Math.abs(i), i < 0 ? "8fd3ff" : "4d9be6");
+    }
+  } else if (kind === "bench") {
+    // Variants: along the tile's u axis, along v, or a pair facing each other.
+    const seats =
+      variant === 0
+        ? [[3, 9, 13, 11, "u"]]
+        : variant === 1
+          ? [[9, 3, 11, 13, "v"]]
+          : [
+              [3, 4, 13, 6, "u"],
+              [3, 11, 13, 13, "u"],
+            ];
+    const parts = seats.flatMap(([u0, v0, u1, v1, axis]) => {
+      const a = axis === "u";
+      return [
+        { solid: box(+u0!, +v0!, 2, +u1!, +v1!, 3), material: WOOD },
+        {
+          solid: a
+            ? box(+u0!, +v0!, 3, +u1!, +v0! + 0.6, 6)
+            : box(+u0!, +v0!, 3, +u0! + 0.6, +v1!, 6),
+          material: WOOD,
+        },
+        { solid: box(+u0!, +v0!, 0, +u0! + 1, +v0! + 1, 2), material: IRON },
+        { solid: box(+u1! - 1, +v1! - 1, 0, +u1!, +v1!, 2), material: IRON },
+      ];
+    });
+    render(c, 1, parts);
+  } else {
+    // Lamp posts: one, two heads, or a short garden lamp.
+    const h = variant === 2 ? 8 : 18;
+    render(c, 1, [
+      { solid: cylinder(8, 8, 1.6, 0, 2), material: IRON },
+      { solid: cylinder(8, 8, 0.7, 2, h), material: IRON },
+      ...(variant === 1
+        ? [
+            { solid: box(5, 7.5, h - 1, 11, 8.5, h), material: IRON },
+            {
+              solid: box(4.5, 7, h - 4, 6, 9, h - 1),
+              material: { ramp: ["f79617", "f9c22b", "fbb954", "fbff86"] },
+            },
+            {
+              solid: box(10, 7, h - 4, 11.5, 9, h - 1),
+              material: { ramp: ["f79617", "f9c22b", "fbb954", "fbff86"] },
+            },
+          ]
+        : [
+            {
+              solid: box(7, 7, h, 9, 9, h + 3),
+              material: { ramp: ["f79617", "f9c22b", "fbb954", "fbff86"] },
+            },
+            { solid: box(6.5, 6.5, h + 3, 9.5, 9.5, h + 4), material: IRON },
+          ]),
+    ]);
+  }
+  return c.cropTop(H);
 }
 
 /** A shaded ellipse lit from the upper left, with a darkest-tone outline. */
@@ -253,14 +370,24 @@ for (const kind of ["grass", "dirt", "pavement"] as const) {
     files,
   });
 }
-for (const kind of ["tree", "bush", "flowers", "weeds", "dead-tree"]) {
+{
   const files: Record<string, Canvas> = {};
+  for (let mask = 0; mask < 16; mask++) files[`mask-${mask}.png`] = water(mask);
+  writeFolder({
+    dir: join(root, "water", "water"),
+    manifest: { id: "water", kind: "water", ...CREDITS },
+    files,
+  });
+}
+for (const kind of ["tree", "bush", "flowers", "weeds", "dead-tree", "fountain", "bench", "lamp"]) {
+  const files: Record<string, Canvas> = {};
+  const props = ["fountain", "bench", "lamp"];
   for (let v = 0; v < DECORATION_VARIANT_COUNT; v++)
-    files[`variant-${v}.png`] = vegetation(kind, v);
+    files[`variant-${v}.png`] = props.includes(kind) ? prop(kind, v) : vegetation(kind, v);
   writeFolder({
     dir: join(root, "vegetation", kind),
     manifest: { id: kind, kind: "vegetation", ...CREDITS },
     files,
   });
 }
-console.log("✓ Drew ground, roads and vegetation");
+console.log("✓ Drew ground, roads, water, vegetation and props");

@@ -77,19 +77,71 @@ describe("generateCity", () => {
       PLACEHOLDER_CATALOG,
     );
     for (const building of before.buildings) expect(after.buildings).toContainEqual(building);
-    // Parks give way to the new building; repository decorations stay put.
-    for (const decoration of before.decorations.filter((d) => !d.repoId.startsWith("park:")))
-      expect(after.decorations).toContainEqual(decoration);
+    // Nature only gives way where the new building or its road now stands.
+    const added = after.buildings.find((b) => b.repoId === "R_new")!;
+    const taken = new Set(after.roads.map((r) => `${r.x},${r.y}`));
+    for (let dx = 0; dx < added.footprint; dx++)
+      for (let dy = 0; dy < added.footprint; dy++)
+        taken.add(`${added.origin.x + dx},${added.origin.y + dy}`);
+    for (const decoration of before.decorations)
+      if (!taken.has(`${decoration.x},${decoration.y}`))
+        expect(after.decorations).toContainEqual(decoration);
   });
 
-  it("fills the unused lots of the last block with parks", () => {
-    const input = FIXTURES.medium!;
-    const model = generateCity(input, PLACEHOLDER_CATALOG);
-    const unused = (4 - (input.repos.length % 4)) % 4;
-    const parks = new Set(
-      model.decorations.filter((d) => d.repoId.startsWith("park:")).map((d) => d.repoId),
+  it("turns some blocks of a large city into parks, but not a village", () => {
+    const parks = (model: CityModel) =>
+      new Set(model.decorations.filter((d) => d.repoId.startsWith("park:")).map((d) => d.repoId));
+    expect(parks(generateCity(FIXTURES.large!, PLACEHOLDER_CATALOG)).size).toBeGreaterThan(0);
+    expect(parks(generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG)).size).toBe(0);
+  });
+
+  it("builds a village of wooden houses for a handful of repositories", () => {
+    const model = generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG);
+    expect(model.buildings.map((b) => b.family)).toEqual(["village", "village"]);
+    // The two houses face each other across the main street.
+    const [a, b] = model.buildings;
+    expect(a!.facing).toBe(1);
+    expect(b!.facing).toBe(3);
+  });
+
+  it("stands every building against a road, facing it", () => {
+    for (const input of Object.values(FIXTURES)) {
+      const model = generateCity(input, PLACEHOLDER_CATALOG);
+      const roads = new Set(model.roads.map((r) => `${r.x},${r.y}`));
+      for (const b of model.buildings) {
+        const { x, y } = b.origin;
+        const f = b.footprint;
+        const front =
+          b.facing === 0
+            ? { x: x + f, y }
+            : b.facing === 1
+              ? { x, y: y + f }
+              : b.facing === 2
+                ? { x: x - 1, y }
+                : { x, y: y - 1 };
+        expect(roads.has(`${front.x},${front.y}`)).toBe(true);
+      }
+    }
+  });
+
+  it("never repeats a drawing right next door", () => {
+    const catalog = createCatalog(
+      ["a", "b", "c"].flatMap((name) =>
+        PLACEHOLDER_MANIFESTS.map((m) => ({ ...m, id: `${m.id}-${name}` })),
+      ),
     );
-    expect(parks.size).toBeGreaterThanOrEqual(Math.min(unused, 1));
+    const model = generateCity(FIXTURES.large!, catalog);
+    for (const [i, a] of model.buildings.entries()) {
+      for (const b of model.buildings.slice(i + 1)) {
+        const touching =
+          a.origin.x <= b.origin.x + b.footprint &&
+          b.origin.x <= a.origin.x + a.footprint &&
+          a.origin.y <= b.origin.y + b.footprint &&
+          b.origin.y <= a.origin.y + a.footprint;
+        if (touching && a.footprint === b.footprint && a.family === b.family)
+          expect(a.manifestId).not.toBe(b.manifestId);
+      }
+    }
   });
 
   it("never puts a building, road or decoration on water", () => {

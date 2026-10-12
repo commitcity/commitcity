@@ -1,6 +1,6 @@
 # 0002. Deterministic, append-only city layout
 
-- **Status:** Accepted
+- **Status:** Accepted, amended 2026-10-12 (point 4, generator version 3)
 - **Date:** 2026-10-08
 - **Related:** [`VISION.md` §4](../VISION.md), [`ARCHITECTURE.md` §5–6](../ARCHITECTURE.md)
 
@@ -31,3 +31,11 @@ The specific lot geometry (one 4×4 lot per repository, blocks of 2×2 lots) is 
 - Deleting a repository, or changing the data scope, shifts newer buildings. This is an accepted limitation.
 - Spatial language districts are deferred.
 - Changing the algorithm is a visible event for users and must be versioned and announced.
+
+## Amendment (2026-10-12): packed streets
+
+The fixed 4 × 4 lot per repository made every city a sparse grid of identical lots, with small buildings alone in the corner of large plots. The project owner asked for a city that reads like a city builder: buildings side by side along the streets, blocks of different sizes, and a small village for accounts with few repositories.
+
+From generator version 3, buildings are packed side by side along the edges of blocks of varied sizes ("dense variable-size packing", listed above as an alternative). Points 1, 2, 3 and 5 still hold: generation is deterministic, randomness is per repository, repositories are placed in creation order, and new repositories never move existing ones. **Point 4 is relaxed**: when a repository's stars change its footprint, the buildings placed after it may move. Commits and archiving still only change the repository's own building. The owner accepted this trade-off on 2026-10-12.
+
+See `ARCHITECTURE.md` §6.2–6.3.

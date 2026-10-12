@@ -67,9 +67,18 @@ Avoid `ffffff` except as a 1 px sparkle. Shadows lean cool, highlights lean warm
 5. **Regenerate and validate**: `pnpm art` redraws everything and formats the manifests; `pnpm validate-assets` must pass. Fix the generator, not the PNG.
 6. **Look at it in context**: start the dev city (`pnpm dev`, then `/dev/city?fixture=medium` and `?fixture=large`), take screenshots at zoom 1 and 2, and check sorting, seams between ground and road tiles, silhouettes, and contrast between families. Fix what reads badly and repeat.
 7. **Review against the checklist** in ART_DIRECTION §15, item by item.
-8. **Show the screenshots to the user before opening the pull request**, and ask what to change. Visual taste is theirs to approve.
+8. **Show the screenshots to the user before opening the pull request**, and ask what to change. Visual taste is theirs to approve. Never open or push a pull request for art or layout before that approval.
 
-## 5. Common mistakes
+## 5. How buildings sit in the city
+
+The layout rules live in `docs/ARCHITECTURE.md` §6.2–6.6; keep them in mind when drawing:
+
+- Buildings stand **side by side** along the streets, with no lot around them. A sprite's lot (ground under the footprint) touches its neighbours' lots, so keep lot edges plain and draw fences or hedges only along the front edges.
+- Blocks vary in size, and neighbours never share the same drawing: a footprint with only one model looks repetitive however many colours it has. Add models, not only colour schemes.
+- Accounts with 8 or fewer repositories are villages drawn only from the `village` family (wooden houses). Every footprint of a family needs every level, or the generator falls back to another family.
+- Trees grow in a few groves and parks fill whole blocks now and then. Do not add decoration to every free tile.
+
+## 6. Common mistakes
 
 - A 1 px error in `diamondTop` makes every tile seam visible. Test with a 3 x 3 patch of ground tiles before anything else.
 - Window rows drawn horizontally instead of along the 2:1 wall slope look like they float.

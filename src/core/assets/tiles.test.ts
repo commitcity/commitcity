@@ -34,7 +34,7 @@ describe("parseTileManifest", () => {
       '"kind" must be "ground" for a folder under assets/ground/',
     ]);
     expect(parseTileManifest({ ...manifest, id: "lava" }, "lava", "ground").problems).toEqual([
-      "ground folders must be named one of: grass, dirt, pavement",
+      "ground folders must be named one of: grass, meadow, forest, dirt, pavement",
     ]);
   });
 

@@ -123,6 +123,30 @@ describe("generateCity", () => {
     }
   });
 
+  it("grows woods away from the city, not beside its streets", () => {
+    for (const input of [FIXTURES.medium!, FIXTURES.large!]) {
+      const model = generateCity(input, PLACEHOLDER_CATALOG);
+      const trees = new Set(
+        model.decorations.filter((d) => d.kind === "tree").map((d) => `${d.x},${d.y}`),
+      );
+      const roads = model.roads.map((r) => [r.x, r.y] as const);
+      const near = (x: number, y: number) =>
+        roads.some(([rx, ry]) => Math.abs(rx - x) + Math.abs(ry - y) <= 1);
+      const { minX, minY, maxX, maxY } = model.bounds;
+      const share = (tiles: [number, number][]) =>
+        tiles.filter(([x, y]) => trees.has(`${x},${y}`)).length / tiles.length;
+      const edge: [number, number][] = [];
+      const street: [number, number][] = [];
+      for (const t of model.ground) {
+        if (t.x - minX < 2 || maxX - t.x < 2 || t.y - minY < 2 || maxY - t.y < 2)
+          edge.push([t.x, t.y]);
+        else if (near(t.x, t.y)) street.push([t.x, t.y]);
+      }
+      expect(share(edge)).toBeGreaterThan(0.4);
+      expect(share(street)).toBeLessThan(0.1);
+    }
+  });
+
   it("stands every building against a road, facing it", () => {
     for (const input of Object.values(FIXTURES)) {
       const model = generateCity(input, PLACEHOLDER_CATALOG);

@@ -59,6 +59,8 @@ const FAMILY_SCHEMES: Record<Family, Scheme> = {
 
 const GROUND: Record<string, Rgb> = {
   grass: [86, 140, 72],
+  meadow: [106, 160, 80],
+  forest: [62, 112, 60],
   dirt: [140, 110, 74],
   pavement: [150, 150, 146],
   water: [70, 120, 190],

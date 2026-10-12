@@ -16,8 +16,10 @@ import { type Material, box, cylinder, dome, render } from "./solids";
 const W = 32;
 const H = 16;
 
+type GroundArt = "grass" | "meadow" | "forest" | "dirt" | "pavement";
+
 /** Every texture variant of a ground kind shares its base color, so tiles meet without seams. */
-function ground(kind: "grass" | "dirt" | "pavement", variant: number): Canvas {
+function ground(kind: GroundArt, variant: number): Canvas {
   const c = new Canvas(W, H);
   const n = (...p: (string | number)[]) => noise("ground", kind, variant, ...p);
   if (kind === "grass") {
@@ -33,6 +35,30 @@ function ground(kind: "grass" | "dirt" | "pavement", variant: number): Canvas {
     }
     for (let i = 0; i < 3; i++)
       c.paint(4 + Math.floor(n("dot-x", i) * 24), 3 + Math.floor(n("dot-y", i) * 10), light);
+  } else if (kind === "meadow" || kind === "forest") {
+    // Lighter meadow or shaded forest floor: the grass's own base colour at the tile
+    // edge, fading into the patch's tone toward the middle, so neighbouring grass
+    // tiles blend in instead of meeting at a hard step.
+    const [dark, base, mid, light, seed] = RAMPS.foliage;
+    const tone = kind === "meadow" ? mid : dark;
+    eachDiamondPixel(W, (x, y, { top, bottom }) => {
+      const d = Math.min(y - top, bottom - y);
+      const p = 0.75 * Math.min(1, d / 3);
+      c.set(x, y, n("tone", x, y) < p ? tone : base);
+    });
+    for (let i = 0; i < 6; i++) {
+      const x = 6 + Math.floor(n("tuft-x", i) * 20);
+      const y = 4 + Math.floor(n("tuft-y", i) * 8);
+      if (kind === "meadow") {
+        c.paint(x, y, light);
+        c.paint(x + 1, y - 1, light);
+      } else {
+        c.paint(x, y, i % 3 ? base : RAMPS.dirt[0]);
+      }
+    }
+    if (kind === "meadow")
+      for (let i = 0; i < 3; i++)
+        c.paint(6 + Math.floor(n("dot-x", i) * 20), 4 + Math.floor(n("dot-y", i) * 8), seed);
   } else if (kind === "dirt") {
     const [dark, shadow, base, light] = RAMPS.dirt;
     eachDiamondPixel(W, (x, y) => c.set(x, y, base));
@@ -352,7 +378,7 @@ function vegetation(kind: string, variant: number): Canvas {
 }
 
 const root = "assets";
-for (const kind of ["grass", "dirt", "pavement"] as const) {
+for (const kind of ["grass", "meadow", "forest", "dirt", "pavement"] as const) {
   const files: Record<string, Canvas> = {};
   for (let v = 0; v < GROUND_VARIANT_COUNT; v++) files[`variant-${v}.png`] = ground(kind, v);
   writeFolder({

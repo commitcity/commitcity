@@ -12,9 +12,13 @@ import {
   connectRoads,
   decorateFree,
   dirtAround,
+  distanceFrom,
   fillGround,
+  inGrove,
+  inMeadow,
   roadAlong,
   uniqueRoads,
+  wildness,
 } from "./surroundings";
 
 /** About one building in eight keeps a one-tile garden beside it. */
@@ -160,19 +164,28 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
     for (let dx = 0; dx < b.rect.w; dx++)
       for (let dy = 0; dy < b.rect.h; dy++) inBlock.add(key(b.rect.x + dx, b.rect.y + dy));
 
+  // The countryside grows wilder away from anything built: woods close in at the
+  // edge, with a shaded floor under them, and lighter meadows in the open grass.
+  const built = new Set([...blocked, ...inPark]);
+  const distance = distanceFrom(built, bounds);
+  const groves: NonNullable<Parameters<typeof inGrove>[4]> = new Map();
+  const meadows: NonNullable<Parameters<typeof inMeadow>[3]> = new Map();
   const free: Parameters<typeof decorateFree>[1][number][] = [];
   for (let y = bounds.minY; y <= bounds.maxY; y++) {
     for (let x = bounds.minX; x <= bounds.maxX; x++) {
       const k = key(x, y);
       if (blocked.has(k) || inPark.has(k) || kinds.get(k) === "water") continue;
-      free.push({
-        x,
-        y,
-        garden: gardens.has(k),
-        dirt: kinds.get(k) === "dirt",
-        // Fewer groves inside blocks (backyards) than in the countryside.
-        density: inBlock.has(k) ? 8 : village ? 24 : 14,
-      });
+      const garden = gardens.has(k);
+      // Land nothing is built on yet, in a block or out of town, goes back to the woods.
+      const wild = garden ? 0 : wildness(owner, x, y, distance.get(k) ?? 0);
+      // Fewer groves inside blocks (backyards) than in the countryside.
+      const density = inBlock.has(k) ? 8 : village ? 24 : 14;
+      if (!kinds.has(k)) {
+        if (wild >= 50 || (!garden && inGrove(owner, x, y, density, groves)))
+          kinds.set(k, "forest");
+        else if (!garden && inMeadow(owner, x, y, meadows)) kinds.set(k, "meadow");
+      }
+      free.push({ x, y, garden, dirt: kinds.get(k) === "dirt", density, wild });
     }
   }
   const decorations = [...parkDecorations, ...decorateFree(owner, free)];

@@ -44,7 +44,7 @@ export interface RoadTile {
   y: number;
 }
 
-export type GroundKind = "grass" | "dirt" | "pavement" | "water";
+export type GroundKind = "grass" | "meadow" | "forest" | "dirt" | "pavement" | "water";
 
 export interface GroundTile {
   x: number;

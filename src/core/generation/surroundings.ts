@@ -3,8 +3,8 @@ import type { Building, Decoration, Facing, GroundKind, GroundTile, RoadTile } f
 import { hash53 } from "@/core/random";
 import type { BlockRect } from "./grid";
 
-/** Margin of ground around the city, in tiles. */
-export const GROUND_MARGIN = 2;
+/** Margin of countryside around the city, in tiles: room for the woods to close in. */
+export const GROUND_MARGIN = 4;
 
 type Tile = { x: number; y: number };
 const at = (x: number, y: number) => `${x},${y}`;
@@ -130,9 +130,9 @@ export function fillGround(
 
 const GROVE_CELL = 6;
 
-/** The grove of one coarse cell, if it has one: its center and radius. */
-function groveOf(owner: string, gx: number, gy: number, density: number) {
-  const seed = `${owner}:grove:${gx},${gy}`;
+/** The grove (or meadow) of one coarse cell, if it has one: its center and radius. */
+function groveOf(owner: string, gx: number, gy: number, density: number, what = "grove") {
+  const seed = `${owner}:${what}:${gx},${gy}`;
   if (roll(seed, 100) >= density) return null;
   return {
     x: gx * GROVE_CELL + roll(`${seed}:x`, GROVE_CELL),
@@ -172,24 +172,100 @@ export function inGrove(
   return false;
 }
 
+/** Lighter meadow patches in open grass, laid out like groves on their own cells. */
+export function inMeadow(
+  owner: string,
+  x: number,
+  y: number,
+  cache = new Map<string, ReturnType<typeof groveOf>>(),
+): boolean {
+  const cx = Math.floor(x / GROVE_CELL);
+  const cy = Math.floor(y / GROVE_CELL);
+  for (let gy = cy - 1; gy <= cy + 1; gy++) {
+    for (let gx = cx - 1; gx <= cx + 1; gx++) {
+      const key = `${gx},${gy}`;
+      let patch = cache.get(key);
+      if (patch === undefined) {
+        patch = groveOf(owner, gx, gy, 30, "meadow");
+        cache.set(key, patch);
+      }
+      if (!patch) continue;
+      const dx = x - patch.x;
+      const dy = y - patch.y;
+      if (dx * dx + dy * dy <= (patch.radius + 1) ** 2) return true;
+    }
+  }
+  return false;
+}
+
 /**
- * Nature on the free tiles: groves of trees, a bush or flowers here and there,
- * flowers in the gardens between buildings, and weeds on dirt. Everything comes
- * from position hashes, so it never depends on repository order.
+ * How wild a tile is, out of 100: 0 next to anything built, growing with the
+ * distance from it, with a ragged edge so the woods do not form a straight line.
+ * Above about 50 the tile is forest.
+ */
+export function wildness(owner: string, x: number, y: number, distance: number): number {
+  const jitter = roll(`${owner}:wild:${Math.floor(x / 3)},${Math.floor(y / 3)}`, 41) - 20;
+  return Math.max(0, Math.min(92, (distance - 1) * 26 + jitter));
+}
+
+/** Distance in steps from each tile in the bounds to the nearest built tile. */
+export function distanceFrom(
+  built: ReadonlySet<string>,
+  bounds: { minX: number; minY: number; maxX: number; maxY: number },
+): Map<string, number> {
+  const distance = new Map<string, number>();
+  const queue: [number, number][] = [];
+  for (const k of built) {
+    const [x, y] = k.split(",").map(Number) as [number, number];
+    distance.set(k, 0);
+    queue.push([x, y]);
+  }
+  for (let i = 0; i < queue.length; i++) {
+    const [x, y] = queue[i]!;
+    const d = distance.get(at(x, y))!;
+    for (const [nx, ny] of [
+      [x + 1, y],
+      [x, y + 1],
+      [x - 1, y],
+      [x, y - 1],
+    ] as const) {
+      if (nx < bounds.minX || nx > bounds.maxX || ny < bounds.minY || ny > bounds.maxY) continue;
+      const k = at(nx, ny);
+      if (distance.has(k)) continue;
+      distance.set(k, d + 1);
+      queue.push([nx, ny]);
+    }
+  }
+  return distance;
+}
+
+/**
+ * Nature on the free tiles: woods that thicken away from the city, groves of
+ * trees, a bush or flowers here and there, flowers in the gardens between
+ * buildings, and weeds on dirt. Everything comes from position hashes, so it
+ * never depends on repository order.
  */
 export function decorateFree(
   owner: string,
-  free: readonly { x: number; y: number; garden: boolean; dirt: boolean; density: number }[],
+  free: readonly {
+    x: number;
+    y: number;
+    garden: boolean;
+    dirt: boolean;
+    density: number;
+    wild: number;
+  }[],
 ): Decoration[] {
   const decorations: Decoration[] = [];
   const groves = new Map<string, ReturnType<typeof groveOf>>();
-  for (const { x, y, garden, dirt, density } of free) {
+  for (const { x, y, garden, dirt, density, wild } of free) {
     const key = `${owner}:nature:${x},${y}`;
     const variant = roll(`${key}:v`, DECORATION_VARIANT_COUNT);
     const pick = roll(key, 100);
     let kind: string | null = null;
     if (dirt) kind = pick < 35 ? "weeds" : pick < 42 ? "dead-tree" : null;
     else if (garden) kind = pick < 30 ? "tree" : pick < 60 ? "flowers" : pick < 80 ? "bush" : null;
+    else if (pick < wild) kind = pick < wild * 0.88 ? "tree" : "bush";
     else if (inGrove(owner, x, y, density, groves))
       kind = pick < 70 ? "tree" : pick < 85 ? "bush" : null;
     else kind = pick < 2 ? "bush" : pick < 3 ? "flowers" : null;

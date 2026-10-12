@@ -139,7 +139,7 @@ const all =
 
 // Lots ----------------------------------------------------------------------------
 
-type Lot = "paved" | "lawn" | "yard" | "plaza";
+type Lot = "paved" | "lawn" | "yard" | "plaza" | "meadow";
 
 function drawLot(c: Canvas, kind: Lot, abandoned: boolean, seed: string) {
   const top = c.height - c.width / 2;
@@ -157,6 +157,13 @@ function drawLot(c: Canvas, kind: Lot, abandoned: boolean, seed: string) {
           : (Math.floor(lx / 8) + ly) % 4 === 0
             ? COLORS.sidewalk
             : COLORS.curb;
+      else if (kind === "meadow")
+        color =
+          noise(seed, "meadow", x, y) < 0.03
+            ? RAMPS.dry[3]
+            : noise(seed, "grass", x, y) < 0.12
+              ? RAMPS.foliage[2]
+              : RAMPS.foliage[1];
       else if (kind === "yard")
         color = rim
           ? COLORS.sidewalk
@@ -1860,9 +1867,433 @@ function monument(ctx: Ctx): Part[] {
   ];
 }
 
+// Village: wooden houses for small towns ------------------------------------------
+
+/** Painted or natural wood: wall colours per face and the darker seam between boards. */
+interface Wood {
+  material: Material;
+  seam: { left: Hex; right: Hex };
+}
+const wood = (r: Hex[], left: Hex, right: Hex, seamLeft: Hex, seamRight: Hex): Wood => ({
+  material: { ramp: r, left, right, top: r[r.length - 1] },
+  seam: { left: seamLeft, right: seamRight },
+});
+const WOODS: Record<string, Wood> = {
+  log: wood(["45293f", "6e2727", "9e4539", "cd683d"], "9e4539", "6e2727", "6e2727", "45293f"),
+  white: wood(["625565", "7f708a", "9babb2", "c7dcd0"], "c7dcd0", "9babb2", "9babb2", "7f708a"),
+  blue: wood(["323353", "484a77", "4d65b4", "4d9be6"], "4d9be6", "4d65b4", "4d65b4", "484a77"),
+  red: wood(["6e2727", "ae2334", "e83b3b", "f68181"], "e83b3b", "ae2334", "ae2334", "6e2727"),
+  yellow: wood(["9e4539", "f79617", "f9c22b", "fbff86"], "f9c22b", "f79617", "f79617", "9e4539"),
+  green: wood(["165a4c", "239063", "1ebc73", "91db69"], "1ebc73", "239063", "239063", "165a4c"),
+  sage: wood(["313638", "374e4a", "547e64", "92a984"], "92a984", "547e64", "547e64", "374e4a"),
+  teal: wood(["0b5e65", "0b8a8f", "0eaf9b", "30e1b9"], "0eaf9b", "0b8a8f", "0b8a8f", "0b5e65"),
+};
+const SHINGLE = ramp("2e222f", "45293f", "694f62", "966c6c");
+const VILLAGE_ROOFS: Record<string, Material> = { ...ROOF, shingle: SHINGLE };
+const TRIM = ramp("625565", "9babb2", "c7dcd0", "c7dcd0");
+
+/** Horizontal boards: a darker seam every `every` units of height. Logs use 3, siding 2. */
+const boards =
+  (w: Wood, every: number): Detail =>
+  (hit) => {
+    const spot = wallSpot(hit);
+    if (!spot) return null;
+    return Math.floor(spot.z) % every === every - 1 ? w.seam[spot.side] : null;
+  };
+
+const woodOf = (scheme: string) => {
+  const [w, r] = pair(scheme);
+  return { w: WOODS[w]!, roof: VILLAGE_ROOFS[r]! };
+};
+
+/** A fence of thin rails along the lot's two front edges, `S` units square. */
+const fence = (S: number, from = 1): Part[] => [
+  { solid: box(from, S - 1, 0, S - 1, S - 0.5, 2), material: WOOD, flat: true },
+  { solid: box(S - 1, from, 0, S - 0.5, S - 1, 2), material: WOOD, flat: true },
+];
+
+/** A porch along the left wall: a plank floor, posts and a roof. */
+function porch(
+  u0: number,
+  u1: number,
+  v: number,
+  depth: number,
+  z: number,
+  roof: Material,
+): Part[] {
+  const parts: Part[] = [
+    { solid: box(u0, v, 0, u1, v + depth, 1), material: WOOD, flat: true },
+    { solid: box(u0 - 0.5, v, z, u1 + 0.5, v + depth + 0.5, z + 1), material: roof },
+  ];
+  for (let u = u0; u <= u1 - 1; u += Math.max(3, Math.floor((u1 - u0 - 1) / 3)))
+    parts.push({ solid: box(u, v + depth - 1, 1, u + 1, v + depth, z), material: TRIM });
+  parts.push({ solid: box(u1 - 1, v + depth - 1, 1, u1, v + depth, z), material: TRIM });
+  return parts;
+}
+
+/** A log cabin with a stone chimney and a small porch. */
+function cabin(ctx: Ctx): Part[] {
+  const { w, roof } = woodOf(ctx.scheme);
+  const storeys = ctx.level === 3 ? 2 : 1;
+  const h = storeys * 7 + (ctx.level === 2 ? 2 : 0);
+  return [
+    {
+      solid: box(3, 3, 0, 12, 10, h),
+      material: w.material,
+      detail: all(houseWindows(ctx, 3, 12, storeys, [[5, 7]]), boards(w, 3)),
+    },
+    { solid: gable(2, 2, 13, 11, h, 6, "u"), material: roof },
+    { solid: box(12, 5, 0, 14, 8, h + 8), material: STONE },
+    ...porch(3, 12, 10, 3, 5, roof),
+    // Firewood stacked by the back corner.
+    { solid: box(1, 11, 0, 3, 14, 3), material: ramp("45293f", "6e2727", "9e4539") },
+  ];
+}
+
+/** A clapboard cottage, gable end to the street, behind a picket fence. */
+function clapboard(ctx: Ctx): Part[] {
+  const { w, roof } = woodOf(ctx.scheme);
+  const storeys = Math.min(ctx.level, 2);
+  const h = storeys * 7;
+  const parts: Part[] = [
+    {
+      solid: box(3, 2, 0, 12, 11, h),
+      material: w.material,
+      detail: all(houseWindows(ctx, 3, 12, storeys, [[6, 8]]), boards(w, 2)),
+    },
+    { solid: gable(2, 1, 13, 12, h, 7, "v"), material: roof },
+    { solid: box(4, 5, h, 6, 7, h + 8), material: BRICK },
+    ...fence(16),
+  ];
+  // A lean-to on the right for the bigger ones.
+  if (ctx.level === 3)
+    parts.push(
+      { solid: box(12, 4, 0, 15, 10, 5), material: w.material, detail: boards(w, 2) },
+      { solid: box(12, 3.5, 5, 15.5, 10.5, 6), material: roof },
+    );
+  return parts;
+}
+
+/** A two-storey farmhouse with a wrap-around porch. */
+function farmhouse(ctx: Ctx): Part[] {
+  const { w, roof } = woodOf(ctx.scheme);
+  const storeys = Math.max(1, Math.min(ctx.level, 2));
+  const h = storeys * 7 + 1;
+  const parts: Part[] = [
+    {
+      solid: box(5, 5, 0, 23, 19, h),
+      material: w.material,
+      detail: all(houseWindows(ctx, 5, 23, storeys, [[11, 13]]), boards(w, 2)),
+    },
+    { solid: gable(4, 4, 24, 20, h, 8, "u"), material: roof },
+    { solid: box(18, 8, h, 20, 10, h + 10), material: BRICK },
+    ...porch(5, 23, 19, 4, 6, roof),
+    ...fence(32),
+  ];
+  if (ctx.level === 3)
+    parts.push(
+      {
+        solid: box(23, 7, 0, 29, 17, 9),
+        material: w.material,
+        detail: all(houseWindows(ctx, 23, 29, 1, []), boards(w, 2)),
+      },
+      { solid: gable(22.5, 6, 29.5, 18, 9, 5, "u"), material: roof },
+    );
+  return parts;
+}
+
+/** A red barn: big front door with a white cross brace, a hay loft and a silo. */
+function barn(ctx: Ctx): Part[] {
+  const { w, roof } = woodOf(ctx.scheme);
+  const h = 10 + ctx.level * 2;
+  const door: Detail = (hit) => {
+    const spot = wallSpot(hit);
+    if (!spot || spot.side !== "left") return null;
+    const s = spot.s - 10;
+    const z = spot.z;
+    if (s < 0 || s >= 10 || z >= 9) return null;
+    if (s < 1 || s >= 9 || z >= 8) return TRIM.ramp[2]!;
+    const d = (s - 1) / 8;
+    if (Math.abs(d - z / 8) < 0.09 || Math.abs(1 - d - z / 8) < 0.09) return TRIM.ramp[2]!;
+    return ctx.abandoned ? COLORS.board : w.seam.left;
+  };
+  const loft: Detail = (hit) => {
+    const spot = wallSpot(hit);
+    if (!spot || spot.side !== "left") return null;
+    return spot.s >= 13 && spot.s < 17 && spot.z >= h + 1 && spot.z < h + 5 ? "2e222f" : null;
+  };
+  const parts: Part[] = [
+    {
+      solid: box(4, 4, 0, 26, 22, h),
+      material: w.material,
+      detail: all(door, boards(w, 2)),
+    },
+    {
+      solid: gable(3, 3, 27, 23, h, 11, "v"),
+      material: roof,
+    },
+    // The gable end is wood too, with the loft door.
+    { solid: gable(4, 21.5, 26, 22, h, 10, "v"), material: w.material, detail: loft },
+    ...fence(32),
+  ];
+  if (ctx.level >= 2)
+    parts.push(
+      { solid: cylinder(28, 8, 3, 0, h + 10), material: STONE },
+      { solid: dome(28, 8, h + 10, 3), material: ROOF.slate! },
+    );
+  return parts;
+}
+
+/** A white wooden chapel with a steeple over the door. */
+function woodChapel(ctx: Ctx): Part[] {
+  const { w, roof } = woodOf(ctx.scheme);
+  const h = 11 + ctx.level * 2;
+  const steeple = h + 8 + ctx.level * 3;
+  return [
+    {
+      solid: box(8, 5, 0, 24, 24, h),
+      material: w.material,
+      detail: all(archWindows(ctx, 5, 24, 4, 6), boards(w, 2)),
+    },
+    { solid: gable(7, 4, 25, 25, h, 9, "v"), material: roof },
+    {
+      solid: box(13, 22, 0, 19, 28, steeple),
+      material: w.material,
+      detail: all(archWindows(ctx, 13, 19, steeple - 7, 4), boards(w, 2)),
+    },
+    { solid: pyramid(12.5, 21.5, 19.5, 28.5, steeple, 12), material: roof },
+    { solid: box(15.5, 24.5, steeple + 12, 16.5, 25.5, steeple + 16), material: GOLD },
+    ...fence(32),
+  ];
+}
+
+/** A general store with a tall false front, an awning and crates by the door. */
+function generalStore(ctx: Ctx): Part[] {
+  const { w, roof } = woodOf(ctx.scheme);
+  const h = 8 + ctx.level * 3;
+  const sign: Detail = (hit) => {
+    const spot = wallSpot(hit);
+    if (!spot || spot.side !== "left") return null;
+    return spot.z >= h + 1 && spot.z < h + 4 && spot.s >= 8 && spot.s < 24 ? "fbb954" : null;
+  };
+  return [
+    {
+      solid: box(5, 4, 0, 27, 22, h),
+      material: w.material,
+      detail: boards(w, 2),
+    },
+    { solid: gable(4.5, 3, 27.5, 22, h, 6, "v"), material: roof },
+    {
+      solid: box(5, 22, 0, 27, 24, h + 6),
+      material: w.material,
+      detail: all(
+        sign,
+        windows({
+          seed: ctx.seed,
+          abandoned: ctx.abandoned,
+          period: 7,
+          width: 5,
+          storey: h,
+          sill: 1,
+          height: 4,
+          from: 0,
+          to: 6,
+          margin: 2,
+          s0: 5,
+          s1: 27,
+          doors: [[15, 18]],
+          lit: 0.6,
+        }),
+        boards(w, 2),
+      ),
+    },
+    { solid: box(5, 24, 6, 27, 28, 7), material: ROOF.red! },
+    { solid: box(5, 24, 0, 27, 28, 1), material: WOOD, flat: true },
+    { solid: box(6, 27, 1, 7, 28, 6), material: TRIM },
+    { solid: box(25, 27, 1, 26, 28, 6), material: TRIM },
+    { solid: box(7, 28.5, 0, 10, 31, 3), material: ramp("45293f", "6e2727", "9e4539", "cd683d") },
+  ];
+}
+
+/** A tower narrowing upward, cut flat at height `h`: a pyramid of the given rise, clipped. */
+function taper(lo: number, hi: number, h: number, rise: number) {
+  const solid = pyramid(lo, lo, hi, hi, 0, rise) as Extract<
+    ReturnType<typeof pyramid>,
+    { kind: "convex" }
+  >;
+  return { kind: "convex" as const, planes: [...solid.planes, { n: [0, 0, 1] as const, d: h }] };
+}
+
+/** A windmill: a tapered wooden tower, a cap and four sails facing the street. */
+function windmill(ctx: Ctx): Part[] {
+  const { w, roof } = woodOf(ctx.scheme);
+  const h = 20 + ctx.level * 6;
+  const len = 11 + ctx.level * 2;
+  const turn = 0.3 + noise(ctx.seed, "turn") * 0.6;
+  const sail = ramp("625565", "9babb2", "c7dcd0", "c7dcd0");
+  return [
+    { solid: taper(7, 25, h, h * 1.8), material: w.material },
+    { solid: box(6, 6, 0, 26, 26, h * 0.35), material: w.material, detail: boards(w, 2) },
+    { solid: dome(16, 16, h, 6), material: roof },
+    { solid: box(15, 20, h - 1, 17, 24, h + 1), material: WOOD },
+    ...[0, 1, 2, 3].map((i) => ({
+      solid: blade(16, 24, h, turn + (i * Math.PI) / 2, len),
+      material: sail,
+    })),
+    ...fence(32),
+  ];
+}
+
+/** A farm: farmhouse, barn and rows of crops behind a fence. */
+function farm(ctx: Ctx): Part[] {
+  const [h0, b0] = pair(ctx.scheme);
+  const house = WOODS[h0]!;
+  const red = WOODS[b0]!;
+  const h = 7 * Math.min(ctx.level, 2) + 1;
+  const parts: Part[] = [
+    {
+      solid: box(4, 4, 0, 18, 14, h),
+      material: house.material,
+      detail: all(houseWindows(ctx, 4, 18, Math.min(ctx.level, 2), [[8, 10]]), boards(house, 2)),
+    },
+    { solid: gable(3, 3, 19, 15, h, 7, "u"), material: ROOF.red! },
+    ...porch(4, 18, 14, 3, 5, ROOF.red!),
+    { solid: box(26, 4, 0, 44, 20, 14), material: red.material, detail: boards(red, 2) },
+    { solid: gable(25, 3, 45, 21, 14, 9, "v"), material: ROOF.slate! },
+  ];
+  if (ctx.level >= 2)
+    parts.push(
+      { solid: cylinder(40, 26, 3, 0, 26), material: STONE },
+      { solid: dome(40, 26, 26, 3), material: ROOF.slate! },
+    );
+  // Crop rows, alternating green and ripe.
+  for (let i = 0; i < 6; i++)
+    parts.push({
+      solid: box(4 + i * 4, 24, 0, 6 + i * 4, 44, 2),
+      material: ctx.level === 3 && i % 2 ? ramp(...RAMPS.dry) : HEDGE,
+      flat: true,
+    });
+  parts.push(...fence(48));
+  return parts;
+}
+
+/** A big log lodge with a cross wing, two chimneys and a long porch. */
+function lodge(ctx: Ctx): Part[] {
+  const { w, roof } = woodOf(ctx.scheme);
+  const storeys = Math.min(ctx.level + 1, 3);
+  const h = storeys * 7;
+  return [
+    {
+      solid: box(8, 8, 0, 56, 30, h),
+      material: w.material,
+      detail: all(houseWindows(ctx, 8, 56, storeys, [[20, 23]]), boards(w, 3)),
+    },
+    { solid: gable(7, 7, 57, 31, h, 10, "u"), material: roof },
+    {
+      solid: box(36, 20, 0, 52, 50, h),
+      material: w.material,
+      detail: all(houseWindows(ctx, 36, 52, storeys, [[42, 45]]), boards(w, 3)),
+    },
+    { solid: gable(35, 19, 53, 51, h, 9, "v"), material: roof },
+    { solid: box(10, 12, 0, 13, 16, h + 12), material: STONE },
+    { solid: box(48, 12, 0, 51, 16, h + 12), material: STONE },
+    ...porch(8, 35, 30, 5, 6, roof),
+    ...fence(64),
+  ];
+}
+
 const HOUSE_SCHEMES = ["cream", "blue", "pink", "yellow", "mint", "white"];
 
 const MODELS: Model[] = [
+  {
+    name: "cabin",
+    family: "village",
+    footprint: 1,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: ["log/green", "log/shingle", "log/slate"],
+    parts: cabin,
+  },
+  {
+    name: "cottage",
+    family: "village",
+    footprint: 1,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: [
+      "white/red",
+      "blue/slate",
+      "yellow/shingle",
+      "green/red",
+      "red/slate",
+      "sage/shingle",
+      "teal/brown",
+    ],
+    parts: clapboard,
+  },
+  {
+    name: "farmhouse",
+    family: "village",
+    footprint: 2,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: ["white/red", "blue/slate", "yellow/green", "sage/shingle"],
+    parts: farmhouse,
+  },
+  {
+    name: "barn",
+    family: "village",
+    footprint: 2,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: ["red/slate", "log/shingle"],
+    parts: barn,
+  },
+  {
+    name: "chapel",
+    family: "village",
+    footprint: 2,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: ["white/slate", "white/red"],
+    parts: woodChapel,
+  },
+  {
+    name: "store",
+    family: "village",
+    footprint: 2,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: ["white/red", "yellow/shingle", "teal/brown"],
+    parts: generalStore,
+  },
+  {
+    name: "windmill",
+    family: "village",
+    footprint: 2,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: ["white/shingle", "log/red"],
+    parts: windmill,
+  },
+  {
+    name: "farm",
+    family: "village",
+    footprint: 3,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: ["white/red", "yellow/log", "blue/red"],
+    parts: farm,
+  },
+  {
+    name: "lodge",
+    family: "village",
+    footprint: 4,
+    levels: [1, 2, 3],
+    lot: "meadow",
+    schemes: ["log/green", "log/slate"],
+    parts: lodge,
+  },
   {
     name: "house",
     family: "residential",

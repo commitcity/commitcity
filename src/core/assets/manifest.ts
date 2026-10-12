@@ -1,6 +1,6 @@
 import { hash53 } from "@/core/random";
 
-export type Family = "residential" | "brick" | "modern" | "industrial" | "civic";
+export type Family = "residential" | "brick" | "modern" | "industrial" | "civic" | "village";
 export type Variant = "default" | "abandoned";
 export type View = 0 | 1 | 2 | 3;
 
@@ -10,6 +10,7 @@ export const FAMILIES: readonly Family[] = [
   "modern",
   "industrial",
   "civic",
+  "village",
 ];
 
 /** One building, as described by its `manifest.json` (ART_DIRECTION.md §12). */

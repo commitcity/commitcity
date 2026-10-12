@@ -49,6 +49,12 @@ const FAMILY_SCHEMES: Record<Family, Scheme> = {
     right: [190, 184, 170],
     window: [120, 150, 170],
   },
+  village: {
+    roof: [110, 39, 39],
+    left: [205, 104, 61],
+    right: [158, 69, 57],
+    window: [251, 185, 84],
+  },
 };
 
 const GROUND: Record<string, Rgb> = {

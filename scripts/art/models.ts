@@ -142,9 +142,9 @@ const all =
 type Lot = "paved" | "lawn" | "yard" | "plaza" | "meadow";
 
 function drawLot(c: Canvas, kind: Lot, abandoned: boolean, seed: string) {
-  // A meadow is the city's own grass: nothing is drawn, so the ground tiles show
-  // through and the building does not seem to stand on a raised plot.
-  if (kind === "meadow" && !abandoned) return;
+  // A meadow or a lawn is the city's own grass: nothing is drawn, so the ground
+  // tiles show through and the building does not seem to stand on a raised plot.
+  if ((kind === "meadow" || kind === "lawn") && !abandoned) return;
   const top = c.height - c.width / 2;
   eachDiamondPixel(
     c.width,
@@ -160,18 +160,12 @@ function drawLot(c: Canvas, kind: Lot, abandoned: boolean, seed: string) {
           : (Math.floor(lx / 8) + ly) % 4 === 0
             ? COLORS.sidewalk
             : COLORS.curb;
-      else if (kind === "yard")
+      else
         color = rim
           ? COLORS.sidewalk
           : noise(seed, "oil", x, y) < 0.04
             ? RAMPS.asphalt[0]
             : RAMPS.asphalt[2];
-      else
-        color = rim
-          ? COLORS.sidewalk
-          : noise(seed, "grass", x, y) < 0.12
-            ? RAMPS.foliage[2]
-            : RAMPS.foliage[1];
       c.set(x, y, color);
     },
     0,
@@ -1621,13 +1615,11 @@ function mall(ctx: Ctx): Part[] {
   return parts;
 }
 
-/** A tech campus: two glass towers joined by a sky bridge, over a lawn. */
+/** A tech campus: two glass towers joined by a sky bridge, on the city's grass. */
 function campus(ctx: Ctx): Part[] {
-  const S = 4 * T;
   const g = GLASSES[ctx.scheme]!;
   const h = 50 + ctx.level * 20;
   return [
-    { solid: box(4, 4, 0, S - 4, S - 4, 1), material: PITCH, flat: true },
     { solid: box(6, 6, 0, 28, 28, h), material: g, detail: curtain(ctx, g, 5, 4) },
     { solid: box(36, 30, 0, 58, 54, h - 16), material: g, detail: curtain(ctx, g, 5, 4) },
     { solid: box(26, 14, h - 34, 40, 22, h - 28), material: WALLS.white! },

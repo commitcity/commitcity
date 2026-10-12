@@ -153,6 +153,8 @@ Proposed initial families:
 | `civic` | Monuments, clock towers, chapels, fire stations, libraries, hospitals, capitols, stadiums | 1×1 to 4×4 |
 | `village` | Wooden buildings for small towns: log cabins, clapboard cottages, farmhouses with porches, a red barn, a wooden chapel, a general store, a windmill, a farm with crop rows, a log lodge. Horizontal boards (a darker seam every 2 px for siding, 3 px for logs), no lot of their own: they stand on the city's grass, with no sidewalk or fence that would read as a raised plot | 1×1 to 4×4 |
 
+Paved, plaza and yard lots are drawn under a building; a building on grass (a house with a lawn, every village building) draws no lot, so the city's own ground shows and nothing reads as a raised plot.
+
 The `village` family is used only for accounts with 8 or fewer repositories (`ARCHITECTURE.md` §6.3.1), and every footprint needs every level so a village never falls back to a city family.
 
 Every family mixes several colour schemes (wall, roof and glass ramps from the palette), so no single colour dominates a district: brick is not only orange and glass is not only blue.

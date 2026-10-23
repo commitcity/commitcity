@@ -20,6 +20,18 @@ export function footprintFromStars(stars: number): Footprint {
   return 1;
 }
 
+/**
+ * < 100 commits → 1, < 400 → 2, < 3000 → 3, otherwise 4. Few repositories have
+ * ten stars, so without this an everyday developer's city is all 1 × 1 houses;
+ * a project with a few hundred commits is a big building whatever its stars.
+ */
+export function footprintFromCommits(commitCount: number | null): Footprint {
+  if (commitCount === null || commitCount < 100) return 1;
+  if (commitCount < 400) return 2;
+  if (commitCount < 3000) return 3;
+  return 4;
+}
+
 /** < 50 commits → 1, < 500 → 2, otherwise 3. Unknown commit counts are level 1. */
 export function levelFromCommits(commitCount: number | null): number {
   if (commitCount === null || commitCount < 50) return 1;
@@ -160,7 +172,13 @@ export function buildingTraits(repo: RepoInput, random: Random, village = false)
   const language = familyFromLanguage(repo.primaryLanguage, random);
   const family: Family = village ? "village" : language;
   const isAnnex = repo.isFork;
-  const base = footprintFromStars(repo.stars);
+  // A fork's commits are mostly its upstream's, so only its stars count.
+  const base = isAnnex
+    ? footprintFromStars(repo.stars)
+    : (Math.max(
+        footprintFromStars(repo.stars),
+        footprintFromCommits(repo.commitCount),
+      ) as Footprint);
   return {
     family,
     footprint: (isAnnex ? Math.max(1, base - 1) : base) as Footprint,

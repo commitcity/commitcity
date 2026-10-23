@@ -296,7 +296,7 @@ All thresholds are **proposals** to be tuned with real data.
 
 | Attribute | Rule |
 |---|---|
-| **Footprint** | From stars on a log scale: 0–9 → 1, 10–99 → 2, 100–999 → 3, ≥ 1000 → 4. |
+| **Footprint** | The larger of two scales. Stars, on a log scale: 0–9 → 1, 10–99 → 2, 100–999 → 3, ≥ 1000 → 4. Commits, so an everyday developer's active projects are big buildings even without stars: < 100 → 1, < 400 → 2, < 3000 → 3, ≥ 3000 → 4 (unknown → 1). Forks use stars only, since their commits are mostly their upstream's. |
 | **Level** | From `commitCount`: < 50 → 1, < 500 → 2, ≥ 500 → 3. If `commitCount` is unknown, level 1. |
 | **Family** | From `primaryLanguage` through a mapping table (for example web languages → `modern`, systems languages → `industrial`, scripting languages → `brick`, documentation/config → `residential`). Unknown languages: chosen from the repository's random stream, never `village`. In a village (§6.3.1) every building is `village`. |
 | **Variant** | `abandoned` if archived, otherwise `default`. |

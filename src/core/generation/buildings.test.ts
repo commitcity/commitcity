@@ -14,6 +14,7 @@ import {
   designOf,
   familyFromLanguage,
   modelOf,
+  footprintFromCommits,
   footprintFromStars,
   levelFromCommits,
 } from "./buildings";
@@ -35,6 +36,12 @@ describe("mapping thresholds", () => {
   it("maps stars to footprints on a log scale", () => {
     expect([0, 9, 10, 99, 100, 999, 1000, 98_000].map(footprintFromStars)).toEqual([
       1, 1, 2, 2, 3, 3, 4, 4,
+    ]);
+  });
+
+  it("maps commits to footprints, with unknown counts at 1 × 1", () => {
+    expect([null, 0, 99, 100, 399, 400, 2999, 3000].map(footprintFromCommits)).toEqual([
+      1, 1, 1, 2, 2, 3, 3, 4,
     ]);
   });
 
@@ -97,6 +104,16 @@ describe("buildingTraits", () => {
   it("turns forks into annexes one size smaller", () => {
     expect(traits({ isFork: true, stars: 150 })).toMatchObject({ isAnnex: true, footprint: 2 });
     expect(traits({ isFork: true, stars: 0 })).toMatchObject({ isAnnex: true, footprint: 1 });
+  });
+
+  it("sizes a building by its stars or its commits, whichever is bigger", () => {
+    expect(traits({ stars: 0, commitCount: 450 }).footprint).toBe(3);
+    expect(traits({ stars: 150, commitCount: 5 }).footprint).toBe(3);
+    expect(traits({ stars: 0, commitCount: 20 }).footprint).toBe(1);
+  });
+
+  it("ignores a fork's commits, which are mostly its upstream's", () => {
+    expect(traits({ isFork: true, stars: 0, commitCount: 50_000 }).footprint).toBe(1);
   });
 
   it("marks archived repositories as abandoned", () => {

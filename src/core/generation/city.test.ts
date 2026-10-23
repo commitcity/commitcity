@@ -77,11 +77,18 @@ describe("generateCity", () => {
       PLACEHOLDER_CATALOG,
     );
     for (const building of before.buildings) expect(after.buildings).toContainEqual(building);
-    // Nature only gives way where the new building or its road now stands.
+    // Nature only gives way where the new building or its road now stands, where
+    // downtown has paved around it, and as the woods draw back a little from it.
     const added = after.buildings.find((b) => b.repoId === "R_new")!;
     const taken = new Set(after.roads.map((r) => `${r.x},${r.y}`));
-    for (let dx = 0; dx < added.footprint; dx++)
-      for (let dy = 0; dy < added.footprint; dy++)
+    const paved = new Set(
+      before.ground.filter((g) => g.kind === "pavement").map((g) => `${g.x},${g.y}`),
+    );
+    for (const g of after.ground)
+      if (g.kind === "pavement" && !paved.has(`${g.x},${g.y}`)) taken.add(`${g.x},${g.y}`);
+    const reach = 3;
+    for (let dx = -reach; dx < added.footprint + reach; dx++)
+      for (let dy = -reach; dy < added.footprint + reach; dy++)
         taken.add(`${added.origin.x + dx},${added.origin.y + dy}`);
     for (const decoration of before.decorations)
       if (!taken.has(`${decoration.x},${decoration.y}`))

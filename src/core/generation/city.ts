@@ -13,9 +13,11 @@ import {
   decorateFree,
   dirtAround,
   distanceFrom,
+  downtownRadius,
   fillGround,
   inGrove,
   inMeadow,
+  ringOf,
   roadAlong,
   uniqueRoads,
   wildness,
@@ -26,6 +28,8 @@ const GAP_CHANCE = 8;
 /** Drawings are not repeated within this many tiles, models not right next door. */
 const DESIGN_RADIUS = 8;
 const MODEL_RADIUS = 3;
+/** Downtown pavement reaches this many tiles from a building, within its block. */
+const PAVED_REACH = 2;
 
 /**
  * CityInput + AssetCatalog → CityModel (ARCHITECTURE.md §6.1). Pure and
@@ -163,6 +167,24 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
   for (const b of used)
     for (let dx = 0; dx < b.rect.w; dx++)
       for (let dy = 0; dy < b.rect.h; dy++) inBlock.add(key(b.rect.x + dx, b.rect.y + dy));
+  // Downtown: around the buildings of the blocks nearest the center the ground is
+  // paved, like the dense core of a city builder, while the suburbs keep their
+  // gardens and groves. A block still filling up keeps its empty part green.
+  const radius = downtownRadius(repos.length, village);
+  const downtown = new Set<string>();
+  const byIndex = new Map(blocks.map((b) => [b.index, b]));
+  buildings.forEach((b, i) => {
+    const space = byIndex.get(placements[i]!.blockIndex)!;
+    // Both sides of the main street belong to downtown.
+    const ring = space.index === MAIN_STREET_BLOCK ? 0 : ringOf(space.rect.block);
+    if (ring > radius) return;
+    for (let dx = -PAVED_REACH; dx < b.footprint + PAVED_REACH; dx++)
+      for (let dy = -PAVED_REACH; dy < b.footprint + PAVED_REACH; dy++) {
+        const x = b.origin.x + dx;
+        const y = b.origin.y + dy;
+        if (space.inside(x, y)) downtown.add(key(x, y));
+      }
+  });
 
   // The countryside grows wilder away from anything built: woods close in at the
   // edge, with a shaded floor under them, and lighter meadows in the open grass.
@@ -176,6 +198,11 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
       const k = key(x, y);
       if (blocked.has(k) || inPark.has(k) || kinds.get(k) === "water") continue;
       const garden = gardens.has(k);
+      if (downtown.has(k) && kinds.get(k) !== "dirt") {
+        if (!kinds.has(k)) kinds.set(k, "pavement");
+        free.push({ x, y, garden, dirt: false, density: 0, wild: 0, downtown: true });
+        continue;
+      }
       // Land nothing is built on yet, in a block or out of town, goes back to the woods.
       const wild = garden ? 0 : wildness(owner, x, y, distance.get(k) ?? 0);
       // Fewer groves inside blocks (backyards) than in the countryside.

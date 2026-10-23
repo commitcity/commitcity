@@ -95,6 +95,32 @@ describe("generateCity", () => {
     expect(parks(generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG)).size).toBe(0);
   });
 
+  it("paves downtown in a city, but not in a village", () => {
+    const paved = (model: CityModel) => model.ground.filter((g) => g.kind === "pavement");
+    const parkPavement = (model: CityModel) => {
+      const parkTiles = new Set(
+        model.decorations.filter((d) => d.repoId.startsWith("park:")).map((d) => `${d.x},${d.y}`),
+      );
+      return parkTiles.size;
+    };
+    const tiny = generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG);
+    expect(paved(tiny)).toEqual([]);
+    for (const input of [FIXTURES.medium!, FIXTURES.large!]) {
+      const model = generateCity(input, PLACEHOLDER_CATALOG);
+      expect(paved(model).length).toBeGreaterThan(parkPavement(model));
+      // Nothing wild grows on pavement: street trees only.
+      const pavement = new Set(paved(model).map((g) => `${g.x},${g.y}`));
+      const onPavement = model.decorations.filter(
+        (d) => d.repoId === "nature" && pavement.has(`${d.x},${d.y}`),
+      );
+      expect(onPavement.every((d) => d.kind === "tree")).toBe(true);
+    }
+    // The larger the city, the larger its downtown.
+    const medium = paved(generateCity(FIXTURES.medium!, PLACEHOLDER_CATALOG)).length;
+    const large = paved(generateCity(FIXTURES.large!, PLACEHOLDER_CATALOG)).length;
+    expect(large).toBeGreaterThan(medium);
+  });
+
   it("builds a village of wooden houses for a handful of repositories", () => {
     const model = generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG);
     expect(model.buildings.map((b) => b.family)).toEqual(["village", "village"]);

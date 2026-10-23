@@ -242,7 +242,7 @@ export function distanceFrom(
 /**
  * Nature on the free tiles: woods that thicken away from the city, groves of
  * trees, a bush or flowers here and there, flowers in the gardens between
- * buildings, and weeds on dirt. Everything comes from position hashes, so it
+ * buildings, weeds on dirt and street trees downtown. Everything comes from position hashes, so it
  * never depends on repository order.
  */
 export function decorateFree(
@@ -254,16 +254,19 @@ export function decorateFree(
     dirt: boolean;
     density: number;
     wild: number;
+    downtown?: boolean;
   }[],
 ): Decoration[] {
   const decorations: Decoration[] = [];
   const groves = new Map<string, ReturnType<typeof groveOf>>();
-  for (const { x, y, garden, dirt, density, wild } of free) {
+  for (const { x, y, garden, dirt, density, wild, downtown } of free) {
     const key = `${owner}:nature:${x},${y}`;
     const variant = roll(`${key}:v`, DECORATION_VARIANT_COUNT);
     const pick = roll(key, 100);
     let kind: string | null = null;
-    if (dirt) kind = pick < 35 ? "weeds" : pick < 42 ? "dead-tree" : null;
+    // Downtown is paved: a street tree now and then, nothing wild.
+    if (downtown) kind = pick < (garden ? 35 : 6) ? "tree" : null;
+    else if (dirt) kind = pick < 35 ? "weeds" : pick < 42 ? "dead-tree" : null;
     else if (garden) kind = pick < 30 ? "tree" : pick < 60 ? "flowers" : pick < 80 ? "bush" : null;
     else if (pick < wild) kind = pick < wild * 0.88 ? "tree" : "bush";
     else if (inGrove(owner, x, y, density, groves))
@@ -272,6 +275,23 @@ export function decorateFree(
     if (kind) decorations.push({ x, y, kind, variant, repoId: "nature" });
   }
   return decorations;
+}
+
+/**
+ * How many rings of blocks around the center are downtown: paved, with street
+ * trees instead of backyards. Downtown grows with the city, the way a dense
+ * core grows in city builders; a village or a small town has none (-1).
+ */
+export function downtownRadius(repoCount: number, village: boolean): number {
+  if (village || repoCount < 20) return -1;
+  if (repoCount < 100) return 0;
+  if (repoCount < 250) return 1;
+  return 2;
+}
+
+/** Ring of a block around the center block: 0 for the center, 1 for the eight around it... */
+export function ringOf(block: { x: number; y: number }): number {
+  return Math.max(Math.abs(block.x), Math.abs(block.y));
 }
 
 /** Free tiles next to an abandoned building turn to dirt. */

@@ -3,6 +3,7 @@ import edgeCases from "../../../fixtures/edge-cases.json";
 import large from "../../../fixtures/large.json";
 import medium from "../../../fixtures/medium.json";
 import tiny from "../../../fixtures/tiny.json";
+import typical from "../../../fixtures/typical.json";
 import { PLACEHOLDER_CATALOG, PLACEHOLDER_MANIFESTS, createCatalog } from "@/core/assets";
 import { type CityInput, type CityModel, parseCityInput } from "@/core/model";
 import { hash53 } from "@/core/random";
@@ -12,6 +13,7 @@ import { findCollisions } from "./invariants";
 
 const FIXTURES: Record<string, CityInput> = {
   tiny: parseCityInput(tiny),
+  typical: parseCityInput(typical),
   medium: parseCityInput(medium),
   large: parseCityInput(large),
   "edge-cases": parseCityInput(edgeCases),
@@ -142,6 +144,37 @@ describe("generateCity", () => {
       }
     }
     expect(model.buildings.some((b) => b.wing)).toBe(true);
+  });
+
+  it("builds a house for every month with contributions", () => {
+    const input = FIXTURES.typical!;
+    const model = generateCity(input, PLACEHOLDER_CATALOG);
+    const houses = model.buildings.filter((b) => b.repoId.startsWith("month:"));
+    const active = input.activity!.filter((m) => m.contributions > 0);
+    expect(houses.map((h) => h.repoId).sort()).toEqual(active.map((m) => `month:${m.month}`));
+    expect(houses.every((h) => h.family === "residential")).toBe(true);
+    // Far more buildings than repositories.
+    expect(model.buildings.length).toBeGreaterThan(2 * input.repos.length);
+    // Without the calendar, the same account is only its repositories.
+    const bare = generateCity({ ...input, activity: undefined }, PLACEHOLDER_CATALOG);
+    expect(bare.buildings.some((b) => b.repoId.startsWith("month:"))).toBe(false);
+  });
+
+  it("keeps every building in place when a new month of contributions comes in", () => {
+    const input = FIXTURES.typical!;
+    const before = generateCity(input, PLACEHOLDER_CATALOG);
+    const after = generateCity(
+      {
+        ...input,
+        activity: [
+          ...input.activity!,
+          { month: "2026-10", contributions: 30, privateContributions: 10 },
+        ],
+      },
+      PLACEHOLDER_CATALOG,
+    );
+    for (const building of before.buildings) expect(after.buildings).toContainEqual(building);
+    expect(after.buildings).toHaveLength(before.buildings.length + 1);
   });
 
   it("builds a village of wooden houses for a handful of repositories", () => {

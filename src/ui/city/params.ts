@@ -1,6 +1,6 @@
 import type { Orientation } from "@/core/view";
 
-export const FIXTURES = ["tiny", "medium", "large", "edge-cases"] as const;
+export const FIXTURES = ["tiny", "typical", "medium", "large", "edge-cases"] as const;
 export type FixtureName = (typeof FIXTURES)[number];
 
 const ORIENTATIONS: Orientation[] = [0, 1, 2, 3];

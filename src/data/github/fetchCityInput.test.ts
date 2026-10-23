@@ -169,4 +169,75 @@ describe("isValidLogin", () => {
   it.each(["", "-a", "a-", "a--b", "a_b", "a.b", "x".repeat(40), "../etc"])("rejects %s", (login) =>
     expect(isValidLogin(login)).toBe(false),
   );
+
+  describe("with the contribution calendar", () => {
+    /** Repositories from a recording; the calendar answered by `calendar`, or a failure. */
+    function withCalendar(calendar: ((query: string) => unknown) | null) {
+      const pages = recordings("two-pages");
+      const queries: string[] = [];
+      const fetch = (async (_url: string, init: RequestInit) => {
+        const { query } = JSON.parse(init.body as string) as { query: string };
+        queries.push(query);
+        if (query.includes("OwnerRepositories")) {
+          const next = pages.shift()!;
+          return new Response(JSON.stringify(next.body), {
+            status: next.status,
+            headers: next.headers,
+          });
+        }
+        if (!calendar) return new Response("{}", { status: 502 });
+        return new Response(JSON.stringify(calendar(query)), { status: 200 });
+      }) as unknown as typeof globalThis.fetch;
+      const result = fetchCityInput("octo-dev", {
+        token: "test-token",
+        fetch,
+        now: () => NOW,
+        activity: true,
+      });
+      return { result, queries };
+    }
+
+    const month = (total: number, restricted: number) => ({
+      contributionCalendar: { totalContributions: total },
+      restrictedContributionsCount: restricted,
+    });
+
+    it("reads every month of every contribution year, oldest first", async () => {
+      const { result, queries } = withCalendar((query) => {
+        if (query.includes("ActivityYears"))
+          return {
+            data: { user: { contributionsCollection: { contributionYears: [2026, 2025] } } },
+          };
+        const user: Record<string, unknown> = {};
+        for (const m of query.matchAll(/(m\d\d): contributionsCollection/g))
+          user[m[1]!] = query.includes('"2025-') ? month(10, 4) : month(3, 0);
+        return { data: { user } };
+      });
+      const r = await result;
+      if (!r.ok) throw new Error(r.error.kind);
+      const activity = r.input.activity!;
+      // 2025 in full, then 2026 up to October, the month of NOW.
+      expect(activity).toHaveLength(12 + 10);
+      expect(activity[0]).toEqual({ month: "2025-01", contributions: 10, privateContributions: 4 });
+      expect(activity.at(-1)).toEqual({
+        month: "2026-10",
+        contributions: 3,
+        privateContributions: 0,
+      });
+      expect(queries.filter((q) => q.includes("ActivityYear(")).length).toBe(2);
+    });
+
+    it("builds the city from repositories alone when the calendar fails", async () => {
+      const r = await withCalendar(null).result;
+      if (!r.ok) throw new Error(r.error.kind);
+      expect(r.input.repos).toHaveLength(6);
+      expect(r.input.activity).toBeUndefined();
+    });
+
+    it("leaves the calendar out for an organization", async () => {
+      const r = await withCalendar(() => ({ data: { user: null } })).result;
+      if (!r.ok) throw new Error(r.error.kind);
+      expect(r.input.activity).toBeUndefined();
+    });
+  });
 });

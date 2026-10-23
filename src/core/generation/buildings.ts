@@ -5,7 +5,7 @@ import {
   type Family,
   type Variant,
 } from "@/core/assets";
-import type { Building, Facing, Footprint, RepoInput } from "@/core/model";
+import type { Building, Facing, Footprint, MonthInput, RepoInput } from "@/core/model";
 import { type Random, hash53, repoSeed } from "@/core/random";
 
 // Repository-to-building mapping (ARCHITECTURE.md §6.5). Thresholds are proposals
@@ -201,6 +201,22 @@ export function buildingTraits(repo: RepoInput, random: Random, village = false)
   };
 }
 
+/**
+ * A house of the contribution calendar: one per month with contributions,
+ * private ones included. A busy month (150 or more) is a 2 × 2 house; the level
+ * (storeys) grows at 20 and 80 contributions.
+ */
+export function houseTraits(month: MonthInput, village: boolean): BuildingTraits {
+  const n = month.contributions;
+  return {
+    family: village ? "village" : "residential",
+    footprint: n >= 150 ? 2 : 1,
+    level: n < 20 ? 1 : n < 80 ? 2 : 3,
+    variant: "default",
+    isAnnex: false,
+  };
+}
+
 /** A wing is one size smaller than its main building, and otherwise alike. */
 export function wingTraits(main: BuildingTraits): BuildingTraits {
   return { ...main, footprint: Math.max(1, main.footprint - 1) as Footprint };
@@ -209,7 +225,7 @@ export function wingTraits(main: BuildingTraits): BuildingTraits {
 /** The building for one repository at its place along a street, facing that street. */
 export function createBuilding(
   owner: string,
-  repo: RepoInput,
+  repo: { id: string },
   traits: BuildingTraits,
   placement: { origin: { x: number; y: number }; facing: Facing },
   catalog: AssetCatalog,

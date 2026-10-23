@@ -1,5 +1,12 @@
 import type { AssetCatalog } from "@/core/assets";
-import type { Building, CityInput, CityModel, Decoration, GroundKind } from "@/core/model";
+import {
+  type Building,
+  type CityInput,
+  type CityModel,
+  type Decoration,
+  type GroundKind,
+  MONTH_PREFIX,
+} from "@/core/model";
 import { hash53, repoStream } from "@/core/random";
 import { GENERATOR_VERSION } from "@/core/version";
 import {
@@ -7,6 +14,7 @@ import {
   buildingTraits,
   createBuilding,
   designOf,
+  houseTraits,
   modelOf,
   wingTraits,
   wingsFromCommits,
@@ -53,21 +61,39 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
   const village = repos.length <= VILLAGE_MAX_REPOS;
   // Every repository is a main building, followed by the wings a busy one grows,
   // so the wings stand right beside it along the street. A garden comes after the
-  // last of them.
-  const parts = repos.flatMap((repo) => {
-    const main = buildingTraits(repo, repoStream(owner, repo.id, "building"), village);
-    const wings = wingsFromCommits(repo.commitCount, repo.isFork);
-    const gap = hash53(`${owner}:gap:${repo.id}`) % GAP_CHANCE === 0;
-    return [
-      { repo, traits: main, wing: 0, gap: gap && wings === 0 },
-      ...Array.from({ length: wings }, (_, i) => ({
-        repo,
-        traits: wingTraits(main),
-        wing: i + 1,
-        gap: gap && i + 1 === wings,
+  // last of them. Every month with contributions is a house. Repositories and
+  // months are placed in the order they happened, so the city only ever grows at
+  // its edge (docs/decisions/0002-*).
+  const groups = [
+    ...repos.map((repo) => {
+      const main = buildingTraits(repo, repoStream(owner, repo.id, "building"), village);
+      const wings = wingsFromCommits(repo.commitCount, repo.isFork);
+      const gap = hash53(`${owner}:gap:${repo.id}`) % GAP_CHANCE === 0;
+      return {
+        at: Date.parse(repo.createdAt),
+        id: repo.id,
+        parts: [
+          { id: repo.id, traits: main, wing: 0, gap: gap && wings === 0 },
+          ...Array.from({ length: wings }, (_, i) => ({
+            id: repo.id,
+            traits: wingTraits(main),
+            wing: i + 1,
+            gap: gap && i + 1 === wings,
+          })),
+        ],
+      };
+    }),
+    ...(input.activity ?? [])
+      .filter((m) => m.contributions > 0)
+      .map((m) => ({
+        at: Date.parse(`${m.month}-01T00:00:00Z`),
+        id: `${MONTH_PREFIX}${m.month}`,
+        parts: [
+          { id: `${MONTH_PREFIX}${m.month}`, traits: houseTraits(m, village), wing: 0, gap: false },
+        ],
       })),
-    ];
-  });
+  ].sort((a, b) => a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const parts = groups.flatMap((g) => g.parts);
   const { placements, blocks } = packBuildings(
     grid,
     parts.map((p) => ({ footprint: p.traits.footprint, gap: p.gap })),
@@ -77,7 +103,7 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
   // Buildings in placement order, each steering away from its neighbours' drawings.
   const buildings: Building[] = [];
   const looks: { design: string; model: string }[] = [];
-  parts.forEach(({ repo, traits, wing }, i) => {
+  parts.forEach(({ id, traits, wing }, i) => {
     const p = placements[i]!;
     const f = traits.footprint;
     // Tiles between two footprints: 0 when they touch.
@@ -106,7 +132,7 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
         (d === undefined ? 0 : 2 * (DESIGN_RADIUS - d)) + (m === undefined ? 0 : MODEL_RADIUS - m)
       );
     };
-    const building = createBuilding(owner, repo, traits, p, catalog, (m) => penalty(m.id), wing);
+    const building = createBuilding(owner, { id }, traits, p, catalog, (m) => penalty(m.id), wing);
     buildings.push(building);
     looks.push({ design: designOf(building.manifestId), model: modelOf(building.manifestId) });
   });
@@ -189,7 +215,7 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
   // Downtown: around the buildings of the blocks nearest the center the ground is
   // paved, like the dense core of a city builder, while the suburbs keep their
   // gardens and groves. A block still filling up keeps its empty part green.
-  const radius = downtownRadius(repos.length, village);
+  const radius = downtownRadius(groups.length, village);
   const downtown = new Set<string>();
   const byIndex = new Map(blocks.map((b) => [b.index, b]));
   buildings.forEach((b, i) => {

@@ -24,7 +24,11 @@ export interface CityModel {
   aggregates: Aggregate[];
 }
 
+/** `repoId` of a house of the contribution calendar: "month:" and the month. */
+export const MONTH_PREFIX = "month:";
+
 export interface Building {
+  /** The repository it stands for, or `month:YYYY-MM` for a house of the contribution calendar. */
   repoId: string;
   manifestId: string;
   /** Back (top) corner of the footprint. */

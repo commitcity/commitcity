@@ -39,12 +39,12 @@ export function connectRoads(pieces: readonly Tile[], candidates: readonly Tile[
     [-1, 0],
     [0, -1],
   ] as const;
+  // Sorted by y, then x; each key is parsed once, not on every comparison.
   const sorted = (keys: Iterable<string>) =>
-    [...keys].sort((a, b) => {
-      const [ax, ay] = parse(a);
-      const [bx, by] = parse(b);
-      return ay - by || ax - bx;
-    });
+    [...keys]
+      .map((k) => ({ k, t: parse(k) }))
+      .sort((a, b) => a.t[1] - b.t[1] || a.t[0] - b.t[0])
+      .map((e) => e.k);
 
   const component = (start: string) => {
     const seen = new Set([start]);
@@ -63,7 +63,15 @@ export function connectRoads(pieces: readonly Tile[], candidates: readonly Tile[
   };
 
   for (;;) {
-    const first = sorted(road)[0];
+    let first: string | undefined;
+    let best: [number, number] | undefined;
+    for (const k of road) {
+      const t = parse(k);
+      if (!best || t[1] < best[1] || (t[1] === best[1] && t[0] < best[0])) {
+        first = k;
+        best = t;
+      }
+    }
     if (first === undefined) break;
     const joined = component(first);
     if (joined.size === road.size) break;

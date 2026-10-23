@@ -52,6 +52,8 @@ export class BlockSpace {
   buildings = 0;
   /** Tiles kept free next to buildings, for gardens. */
   readonly gardens: { x: number; y: number }[] = [];
+  /** Smallest footprint that found no spot; tiles are only ever taken, so it never fits again. */
+  private noRoomFor = Infinity;
 
   constructor(
     readonly rect: BlockRect,
@@ -82,10 +84,12 @@ export class BlockSpace {
 
   /** Places a footprint at the first free spot, or returns null when the block is full. */
   place(f: Footprint, gap: boolean): Placement | null {
+    if (f >= this.noRoomFor) return null;
     for (const side of SIDES) {
       const placed = this.placeOnSide(f, gap, side);
       if (placed) return placed;
     }
+    this.noRoomFor = f;
     return null;
   }
 

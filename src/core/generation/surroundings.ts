@@ -280,6 +280,8 @@ export function decorateFree(
     else if (inGrove(owner, x, y, density, groves))
       kind = pick < 70 ? "tree" : pick < 85 ? "bush" : null;
     else kind = pick < 2 ? "bush" : pick < 3 ? "flowers" : null;
+    // Some street and garden trees are flowering ones.
+    if (kind === "tree" && (downtown || garden) && roll(`${key}:bloom`, 3) === 0) kind = "blossom";
     if (kind) decorations.push({ x, y, kind, variant, repoId: "nature" });
   }
   return decorations;

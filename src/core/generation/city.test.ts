@@ -117,12 +117,12 @@ describe("generateCity", () => {
     for (const input of [FIXTURES.medium!, FIXTURES.large!]) {
       const model = generateCity(input, PLACEHOLDER_CATALOG);
       expect(paved(model).length).toBeGreaterThan(parkPavement(model));
-      // Nothing wild grows on pavement: street trees only.
+      // Nothing wild grows on pavement: street trees only, some of them flowering.
       const pavement = new Set(paved(model).map((g) => `${g.x},${g.y}`));
       const onPavement = model.decorations.filter(
         (d) => d.repoId === "nature" && pavement.has(`${d.x},${d.y}`),
       );
-      expect(onPavement.every((d) => d.kind === "tree")).toBe(true);
+      expect(onPavement.every((d) => d.kind === "tree" || d.kind === "blossom")).toBe(true);
     }
     // The larger the city, the larger its downtown.
     const medium = paved(generateCity(FIXTURES.medium!, PLACEHOLDER_CATALOG)).length;

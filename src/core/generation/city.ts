@@ -44,6 +44,11 @@ const GAP_CHANCE = 8;
 /** Drawings are not repeated within this many tiles, models not right next door. */
 const DESIGN_RADIUS = 8;
 const MODEL_RADIUS = 3;
+/**
+ * A big building (3 × 3 or 4 × 4) is a landmark of the skyline: its model is not
+ * repeated within this many tiles while any other model fits.
+ */
+const LANDMARK_RADIUS = 14;
 /** Downtown pavement reaches this many tiles from a building, within its block. */
 const PAVED_REACH = 2;
 
@@ -115,21 +120,23 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
         b.origin.y - (p.origin.y + f),
         p.origin.y - (b.origin.y + b.footprint),
       );
+    const modelRadius = f >= 3 ? LANDMARK_RADIUS : MODEL_RADIUS;
+    const reach = Math.max(DESIGN_RADIUS, modelRadius);
     const designs = new Map<string, number>();
     const models = new Map<string, number>();
     for (const [j, b] of buildings.entries()) {
       const g = gap(b);
-      if (g >= DESIGN_RADIUS) continue;
+      if (g >= reach) continue;
       const { design, model } = looks[j]!;
       if (g < DESIGN_RADIUS) designs.set(design, Math.min(g, designs.get(design) ?? g));
-      if (g < MODEL_RADIUS) models.set(model, Math.min(g, models.get(model) ?? g));
+      if (g < modelRadius) models.set(model, Math.min(g, models.get(model) ?? g));
     }
     // The closer a repeat, the worse: the same drawing counts double the same model.
     const penalty = (id: string) => {
       const d = designs.get(designOf(id));
       const m = models.get(modelOf(id));
       return (
-        (d === undefined ? 0 : 2 * (DESIGN_RADIUS - d)) + (m === undefined ? 0 : MODEL_RADIUS - m)
+        (d === undefined ? 0 : 2 * (DESIGN_RADIUS - d)) + (m === undefined ? 0 : modelRadius - m)
       );
     };
     const building = createBuilding(owner, { id }, traits, p, catalog, (m) => penalty(m.id), wing);

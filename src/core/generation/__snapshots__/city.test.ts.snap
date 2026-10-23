@@ -34,8 +34,8 @@ exports[`generateCity > is deterministic and matches its snapshot (edge-cases) 1
     "ground": 440,
     "roads": 32,
   },
-  "digest": "14c8a5596b80a6",
-  "generatorVersion": 8,
+  "digest": "168534dea65e2b",
+  "generatorVersion": 9,
 }
 `;
 
@@ -480,8 +480,8 @@ exports[`generateCity > is deterministic and matches its snapshot (large) 1`] = 
     "ground": 3906,
     "roads": 755,
   },
-  "digest": "efb117a795378",
-  "generatorVersion": 8,
+  "digest": "b21d7821767f7",
+  "generatorVersion": 9,
 }
 `;
 
@@ -539,8 +539,8 @@ exports[`generateCity > is deterministic and matches its snapshot (medium) 1`] =
     "ground": 896,
     "roads": 77,
   },
-  "digest": "19808c22f4a9ba",
-  "generatorVersion": 8,
+  "digest": "74aed7e696040",
+  "generatorVersion": 9,
 }
 `;
 
@@ -564,8 +564,8 @@ exports[`generateCity > is deterministic and matches its snapshot (tiny) 1`] = `
     "ground": 234,
     "roads": 8,
   },
-  "digest": "2287c2abb16bb",
-  "generatorVersion": 8,
+  "digest": "60e8384671f9c",
+  "generatorVersion": 9,
 }
 `;
 
@@ -653,7 +653,7 @@ exports[`generateCity > is deterministic and matches its snapshot (typical) 1`] 
     "ground": 924,
     "roads": 86,
   },
-  "digest": "16df6a98a2f450",
-  "generatorVersion": 8,
+  "digest": "1827d0d0514606",
+  "generatorVersion": 9,
 }
 `;

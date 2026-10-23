@@ -269,6 +269,35 @@ describe("generateCity", () => {
     }
   });
 
+  it("spreads the models of big buildings across the skyline", () => {
+    // Six models per family and size, ids shaped like the real ones: family-model-….
+    const catalog = createCatalog(
+      [1, 2, 3, 4, 5, 6].flatMap((k) =>
+        PLACEHOLDER_MANIFESTS.map((m) => ({ ...m, id: `${m.family}-m${k}-${m.id}` })),
+      ),
+    );
+    const model = generateCity(FIXTURES.large!, catalog);
+    const big = model.buildings.filter((b) => b.footprint >= 3);
+    const modelOf = (id: string) => id.split("-").slice(0, 2).join("-");
+    let close = 0;
+    for (const [i, a] of big.entries())
+      for (const b of big.slice(i + 1)) {
+        const gap = Math.max(
+          0,
+          b.origin.x - (a.origin.x + a.footprint),
+          a.origin.x - (b.origin.x + b.footprint),
+          b.origin.y - (a.origin.y + a.footprint),
+          a.origin.y - (b.origin.y + b.footprint),
+        );
+        if (gap < 10 && a.family === b.family && a.footprint === b.footprint)
+          if (modelOf(a.manifestId) === modelOf(b.manifestId)) close++;
+      }
+    expect(big.length).toBeGreaterThan(20);
+    // Within 10 tiles a model repeats only when all six are already close by:
+    // 3 pairs here, against 7 when big buildings only avoid their next-door models.
+    expect(close).toBeLessThanOrEqual(3);
+  });
+
   it("never puts a building, road or decoration on water", () => {
     for (const input of Object.values(FIXTURES)) {
       const model = generateCity(input, PLACEHOLDER_CATALOG);

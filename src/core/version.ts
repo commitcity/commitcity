@@ -5,4 +5,4 @@
  * so that stability is only promised within a single version.
  * See docs/ARCHITECTURE.md §5.
  */
-export const GENERATOR_VERSION = 8;
+export const GENERATOR_VERSION = 9;

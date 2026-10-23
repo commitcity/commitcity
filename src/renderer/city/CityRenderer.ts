@@ -171,14 +171,17 @@ export class CityRenderer {
       [this.hovered !== this.selected ? this.hovered : null, HOVER_COLOR],
       [this.selected, SELECTED_COLOR],
     ];
+    // A repository may stand as several buildings (its wings): outline them all.
     for (const [repoId, color] of outlines) {
-      const item = repoId && this.objects.find((o) => o.pickId === repoId);
-      if (!item) continue;
-      const { width, height } = textures.mask(item.textureKey);
-      const origin = spriteOrigin(item, width, height);
-      const sprite = new Sprite(textures.outline(item.textureKey, color));
-      sprite.position.set(origin.x - 1, origin.y - 1);
-      layer.addChild(sprite);
+      if (!repoId) continue;
+      for (const item of this.objects) {
+        if (item.pickId !== repoId) continue;
+        const { width, height } = textures.mask(item.textureKey);
+        const origin = spriteOrigin(item, width, height);
+        const sprite = new Sprite(textures.outline(item.textureKey, color));
+        sprite.position.set(origin.x - 1, origin.y - 1);
+        layer.addChild(sprite);
+      }
     }
   }
 

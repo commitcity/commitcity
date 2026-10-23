@@ -2,7 +2,15 @@ import type { AssetCatalog } from "@/core/assets";
 import type { Building, CityInput, CityModel, Decoration, GroundKind } from "@/core/model";
 import { hash53, repoStream } from "@/core/random";
 import { GENERATOR_VERSION } from "@/core/version";
-import { VILLAGE_MAX_REPOS, buildingTraits, createBuilding, designOf, modelOf } from "./buildings";
+import {
+  VILLAGE_MAX_REPOS,
+  buildingTraits,
+  createBuilding,
+  designOf,
+  modelOf,
+  wingTraits,
+  wingsFromCommits,
+} from "./buildings";
 import { StreetGrid } from "./grid";
 import { sortRepos } from "./order";
 import { MAIN_STREET_BLOCK, packBuildings } from "./packing";
@@ -43,24 +51,35 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
   const repos = sortRepos(input.repos);
   const grid = new StreetGrid(owner);
   const village = repos.length <= VILLAGE_MAX_REPOS;
-  const traits = repos.map((repo) =>
-    buildingTraits(repo, repoStream(owner, repo.id, "building"), village),
-  );
+  // Every repository is a main building, followed by the wings a busy one grows,
+  // so the wings stand right beside it along the street. A garden comes after the
+  // last of them.
+  const parts = repos.flatMap((repo) => {
+    const main = buildingTraits(repo, repoStream(owner, repo.id, "building"), village);
+    const wings = wingsFromCommits(repo.commitCount, repo.isFork);
+    const gap = hash53(`${owner}:gap:${repo.id}`) % GAP_CHANCE === 0;
+    return [
+      { repo, traits: main, wing: 0, gap: gap && wings === 0 },
+      ...Array.from({ length: wings }, (_, i) => ({
+        repo,
+        traits: wingTraits(main),
+        wing: i + 1,
+        gap: gap && i + 1 === wings,
+      })),
+    ];
+  });
   const { placements, blocks } = packBuildings(
     grid,
-    traits.map((t, i) => ({
-      footprint: t.footprint,
-      gap: hash53(`${owner}:gap:${repos[i]!.id}`) % GAP_CHANCE === 0,
-    })),
+    parts.map((p) => ({ footprint: p.traits.footprint, gap: p.gap })),
     (k) => isParkBlock(owner, k),
   );
 
   // Buildings in placement order, each steering away from its neighbours' drawings.
   const buildings: Building[] = [];
   const looks: { design: string; model: string }[] = [];
-  repos.forEach((repo, i) => {
+  parts.forEach(({ repo, traits, wing }, i) => {
     const p = placements[i]!;
-    const f = traits[i]!.footprint;
+    const f = traits.footprint;
     // Tiles between two footprints: 0 when they touch.
     const gap = (b: Building) =>
       Math.max(
@@ -87,7 +106,7 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
         (d === undefined ? 0 : 2 * (DESIGN_RADIUS - d)) + (m === undefined ? 0 : MODEL_RADIUS - m)
       );
     };
-    const building = createBuilding(owner, repo, traits[i]!, p, catalog, (m) => penalty(m.id));
+    const building = createBuilding(owner, repo, traits, p, catalog, (m) => penalty(m.id), wing);
     buildings.push(building);
     looks.push({ design: designOf(building.manifestId), model: modelOf(building.manifestId) });
   });

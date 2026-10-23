@@ -300,6 +300,7 @@ All thresholds are **proposals** to be tuned with real data.
 | **Level** | From `commitCount`: < 50 → 1, < 500 → 2, ≥ 500 → 3. If `commitCount` is unknown, level 1. |
 | **Family** | From `primaryLanguage` through a mapping table (for example web languages → `modern`, systems languages → `industrial`, scripting languages → `brick`, documentation/config → `residential`). Unknown languages: chosen from the repository's random stream, never `village`. In a village (§6.3.1) every building is `village`. |
 | **Variant** | `abandoned` if archived, otherwise `default`. |
+| **Wings** | A busy repository grows extra buildings beside its main one: one wing per 300 commits, at most 3, none for forks. A wing is one size smaller than the main building (minimum 1), shares its family, level and variant, and is placed right after it, so it stands beside it along the street. Every wing shows the same repository on hover and selection. |
 | **Annex** | Forks: footprint reduced by one (minimum 1) and `isAnnex = true`. |
 | **Manifest** | Chosen among manifests matching family, footprint, level, and variant (see below). If none match, relax family first, then level. A placeholder exists for every footprint, so the search always succeeds. |
 

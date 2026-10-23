@@ -36,6 +36,12 @@ export interface Building {
   level: number;
   variant: Variant;
   isAnnex: boolean;
+  /**
+   * 1, 2 or 3 for the extra wings a busy repository grows beside its main
+   * building (ARCHITECTURE.md §6.5); absent for the main building. Every wing
+   * shows the same repository.
+   */
+  wing?: number;
 }
 
 /** Road shapes are not stored; the view layer derives them from neighbors. */

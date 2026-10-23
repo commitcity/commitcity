@@ -128,6 +128,22 @@ describe("generateCity", () => {
     expect(large).toBeGreaterThan(medium);
   });
 
+  it("grows wings beside the main building of a busy repository", () => {
+    const input = FIXTURES.medium!;
+    const model = generateCity(input, PLACEHOLDER_CATALOG);
+    for (const repo of input.repos) {
+      const parts = model.buildings.filter((b) => b.repoId === repo.id);
+      const wings = repo.isFork ? 0 : Math.min(3, Math.floor((repo.commitCount ?? 0) / 300));
+      expect(parts.length).toBe(1 + wings);
+      const main = parts.find((b) => !b.wing)!;
+      for (const w of parts.filter((b) => b.wing)) {
+        expect(w.footprint).toBe(Math.max(1, main.footprint - 1));
+        expect(w.family).toBe(main.family);
+      }
+    }
+    expect(model.buildings.some((b) => b.wing)).toBe(true);
+  });
+
   it("builds a village of wooden houses for a handful of repositories", () => {
     const model = generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG);
     expect(model.buildings.map((b) => b.family)).toEqual(["village", "village"]);
@@ -259,17 +275,15 @@ describe("generateCity", () => {
     };
     const after = generateCity(input, createCatalog([...PLACEHOLDER_MANIFESTS, added]));
 
-    const changed = before.buildings.filter(
-      (b, i) => b.manifestId !== after.buildings[i]!.manifestId,
-    );
+    const changed = before.buildings
+      .map((b, i) => ({ b, now: after.buildings[i]! }))
+      .filter(({ b, now }) => b.manifestId !== now.manifestId);
     expect(changed.length).toBeGreaterThan(0);
     expect(changed.length / before.buildings.length).toBeLessThan(0.5);
     // Only buildings the new manifest fits can switch, and only to it.
-    for (const b of changed) {
+    for (const { b, now } of changed) {
       expect(b).toMatchObject({ family: "brick", footprint: 2 });
-      expect(after.buildings.find((a) => a.repoId === b.repoId)!.manifestId).toBe(
-        "new-brick-office",
-      );
+      expect(now.manifestId).toBe("new-brick-office");
     }
     // Everything except the manifest choice stays put.
     expect(after.buildings.map((b) => ({ ...b, manifestId: "" }))).toEqual(

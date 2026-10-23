@@ -32,6 +32,19 @@ export function footprintFromCommits(commitCount: number | null): Footprint {
   return 4;
 }
 
+/** Commits per extra wing, and the most wings one repository grows. */
+export const COMMITS_PER_WING = 300;
+export const MAX_WINGS = 3;
+
+/**
+ * Extra wings beside a repository's main building: one per 300 commits, at most
+ * three. A fork has none, since its commits are mostly its upstream's.
+ */
+export function wingsFromCommits(commitCount: number | null, isFork: boolean): number {
+  if (isFork || commitCount === null) return 0;
+  return Math.min(MAX_WINGS, Math.floor(commitCount / COMMITS_PER_WING));
+}
+
 /** < 50 commits → 1, < 500 → 2, otherwise 3. Unknown commit counts are level 1. */
 export function levelFromCommits(commitCount: number | null): number {
   if (commitCount === null || commitCount < 50) return 1;
@@ -188,6 +201,11 @@ export function buildingTraits(repo: RepoInput, random: Random, village = false)
   };
 }
 
+/** A wing is one size smaller than its main building, and otherwise alike. */
+export function wingTraits(main: BuildingTraits): BuildingTraits {
+  return { ...main, footprint: Math.max(1, main.footprint - 1) as Footprint };
+}
+
 /** The building for one repository at its place along a street, facing that street. */
 export function createBuilding(
   owner: string,
@@ -196,8 +214,10 @@ export function createBuilding(
   placement: { origin: { x: number; y: number }; facing: Facing },
   catalog: AssetCatalog,
   penalty?: (manifest: BuildingManifest) => number,
+  wing = 0,
 ): Building {
-  const manifest = chooseManifest(catalog, repoSeed(owner, repo.id), traits, penalty);
+  const seed = repoSeed(owner, repo.id) + (wing ? `:wing:${wing}` : "");
+  const manifest = chooseManifest(catalog, seed, traits, penalty);
   return {
     repoId: repo.id,
     manifestId: manifest.id,
@@ -208,5 +228,6 @@ export function createBuilding(
     level: traits.level,
     variant: traits.variant,
     isAnnex: traits.isAnnex,
+    ...(wing ? { wing } : {}),
   };
 }

@@ -94,7 +94,8 @@ describe("fetchCityInput", () => {
     const r = await lookup("two-pages").result;
     if (!r.ok) throw new Error(r.error.kind);
     const city = generateCity(r.input, createCatalog(withPlaceholders([])));
-    expect(city.buildings).toHaveLength(6);
+    // One main building per repository; busy ones also grow wings.
+    expect(city.buildings.filter((b) => !b.wing)).toHaveLength(6);
   });
 
   it("stops after maxRepos", async () => {

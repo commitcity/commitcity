@@ -149,7 +149,7 @@ export function useCity(input: CityInput, start: CityStart): City {
       if (!renderer) return;
 
       const cycle = (step: number) => {
-        const ids = model.buildings.map((b) => b.repoId);
+        const ids = model.buildings.filter((b) => !b.wing).map((b) => b.repoId);
         if (ids.length === 0) return;
         const index = selected ? ids.indexOf(selected) : -1;
         const next = ids[(index + step + ids.length) % ids.length]!;

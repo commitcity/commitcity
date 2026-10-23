@@ -16,6 +16,7 @@ import {
   modelOf,
   footprintFromCommits,
   footprintFromStars,
+  wingsFromCommits,
   levelFromCommits,
 } from "./buildings";
 
@@ -43,6 +44,13 @@ describe("mapping thresholds", () => {
     expect([null, 0, 99, 100, 399, 400, 2999, 3000].map(footprintFromCommits)).toEqual([
       1, 1, 1, 2, 2, 3, 3, 4,
     ]);
+  });
+
+  it("grows a wing per 300 commits, at most three, and none for a fork", () => {
+    expect([null, 299, 300, 899, 900, 50_000].map((c) => wingsFromCommits(c, false))).toEqual([
+      0, 0, 1, 2, 3, 3,
+    ]);
+    expect(wingsFromCommits(50_000, true)).toBe(0);
   });
 
   it("maps commits to levels, with unknown counts at level 1", () => {

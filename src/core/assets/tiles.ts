@@ -30,7 +30,17 @@ const TILE_IDS: Record<TileKind, readonly string[] | null> = {
   road: null,
   water: ["water"],
   // Props live with the vegetation: they stand on one tile the same way.
-  vegetation: ["tree", "bush", "flowers", "weeds", "dead-tree", "fountain", "bench", "lamp"],
+  vegetation: [
+    "tree",
+    "blossom",
+    "bush",
+    "flowers",
+    "weeds",
+    "dead-tree",
+    "fountain",
+    "bench",
+    "lamp",
+  ],
 };
 
 export interface TileManifest {

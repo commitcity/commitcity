@@ -274,7 +274,8 @@ export class CityPlaceholders {
     };
 
     switch (kind) {
-      case "tree": {
+      case "tree":
+      case "blossom": {
         const r = (4 + (variant % 3)) * u;
         trunk(6 * u, [96, 66, 44]);
         disc(cx, groundY - 6 * u - r + u, r, [56, 118, 58], [86, 150, 70]);

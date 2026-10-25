@@ -91,7 +91,7 @@ export function buildRenderList(
   }
   const entries: ObjectEntry[] = [
     ...model.buildings.map((b): ObjectEntry => ({
-      id: `b:${b.repoId}`,
+      id: b.wing ? `b:${b.repoId}:${b.wing}` : `b:${b.repoId}`,
       footprint: rotateFootprint({ ...b.origin, size: b.footprint }, orientation),
       textureKey: buildingKey({
         manifestId: b.manifestId,

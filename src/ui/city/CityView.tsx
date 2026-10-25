@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { parseCityInput } from "@/core/model";
 import type { Orientation } from "@/core/view";
 import tiny from "../../../fixtures/tiny.json";
+import typical from "../../../fixtures/typical.json";
 import medium from "../../../fixtures/medium.json";
 import large from "../../../fixtures/large.json";
 import edgeCases from "../../../fixtures/edge-cases.json";
-import { InfoPanel } from "./InfoPanel";
+import { InfoPanel, MonthPanel, monthSummary } from "./InfoPanel";
 import { type CityParams, FIXTURES, type FixtureName, cityQuery } from "./params";
 import { useCity } from "./useCity";
 
@@ -15,6 +16,7 @@ const ORIENTATIONS: Orientation[] = [0, 1, 2, 3];
 
 const FIXTURE_DATA: Record<FixtureName, unknown> = {
   tiny,
+  typical,
   medium,
   large,
   "edge-cases": edgeCases,
@@ -37,6 +39,8 @@ export function CityView({ initial }: { initial: CityParams }) {
     selected,
     select,
     hovered,
+    selectedMonth,
+    hoveredMonth,
     stats,
   } = useCity(input, initial);
 
@@ -93,10 +97,15 @@ export function CityView({ initial }: { initial: CityParams }) {
           {buildingCount} buildings · {stats.fps} fps · {stats.sprites} sprites
         </span>
         <span data-testid="city-hover" style={{ color: "#bbb" }}>
-          {hovered ? hovered.name : "arrows pan · +/- zoom · q/e rotate · n/p next"}
+          {hovered
+            ? hovered.name
+            : hoveredMonth
+              ? monthSummary(hoveredMonth)
+              : "arrows pan · +/- zoom · q/e rotate · n/p next"}
         </span>
       </div>
       {selected && <InfoPanel owner={input.owner} repo={selected} onClose={() => select(null)} />}
+      {selectedMonth && <MonthPanel month={selectedMonth} onClose={() => select(null)} />}
     </div>
   );
 }

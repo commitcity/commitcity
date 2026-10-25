@@ -3,7 +3,7 @@
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { createCatalog, withPlaceholders } from "@/core/assets";
 import { generateCity } from "@/core/generation";
-import type { CityInput, RepoInput } from "@/core/model";
+import { type CityInput, MONTH_PREFIX, type MonthInput, type RepoInput } from "@/core/model";
 import { type Orientation, TILE_32 } from "@/core/view";
 import type { CityRenderer } from "@/renderer/city/CityRenderer";
 import { type LoadedAssets, loadAssets } from "@/renderer/city/loadAssets";
@@ -39,6 +39,9 @@ export interface City {
   selected: RepoInput | null;
   select: (repoId: string | null) => void;
   hovered: RepoInput | null;
+  /** The month a selected or hovered house of the contribution calendar stands for. */
+  selectedMonth: MonthInput | null;
+  hoveredMonth: MonthInput | null;
   stats: { fps: number; sprites: number };
 }
 
@@ -65,6 +68,10 @@ export function useCity(input: CityInput, start: CityStart): City {
   );
   const model = useMemo(() => generateCity(input, catalog), [input, catalog]);
   const repos = useMemo(() => new Map(input.repos.map((r) => [r.id, r])), [input]);
+  const months = useMemo(
+    () => new Map((input.activity ?? []).map((m) => [`${MONTH_PREFIX}${m.month}`, m])),
+    [input],
+  );
 
   const [selected, setSelected] = useState<string | null>(
     () => input.repos.find((r) => r.name === start.repo)?.id ?? null,
@@ -149,7 +156,7 @@ export function useCity(input: CityInput, start: CityStart): City {
       if (!renderer) return;
 
       const cycle = (step: number) => {
-        const ids = model.buildings.map((b) => b.repoId);
+        const ids = model.buildings.filter((b) => !b.wing).map((b) => b.repoId);
         if (ids.length === 0) return;
         const index = selected ? ids.indexOf(selected) : -1;
         const next = ids[(index + step + ids.length) % ids.length]!;
@@ -217,6 +224,8 @@ export function useCity(input: CityInput, start: CityStart): City {
     selected: (selected && repos.get(selected)) || null,
     select: setSelected,
     hovered: (hovered && repos.get(hovered)) || null,
+    selectedMonth: (selected && months.get(selected)) || null,
+    hoveredMonth: (hovered && months.get(hovered)) || null,
     stats,
   };
 }

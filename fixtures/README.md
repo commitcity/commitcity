@@ -6,6 +6,7 @@ Sample `CityInput` JSON files used in development and tests. All profiles are **
 | --- | --- | --- |
 | `tiny.json` | 2 | Smallest useful city. |
 | `medium.json` | 30 | A typical profile. |
+| `typical.json` | 16 | An everyday developer: few stars, a handful of busy repositories, and five years of monthly contributions (`activity`), many of them private. |
 | `large.json` | 320 | Above the 300-building limit, to exercise aggregation later. |
 | `edge-cases.json` | 12 | Forks, archived repos, missing language, unknown commit count, identical `createdAt`, star thresholds, non-ASCII names. |
 | `spike/` | — | Hand-written scenes for the Milestone 1.1 rendering spike. Not `CityInput`. |

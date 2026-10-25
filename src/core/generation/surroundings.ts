@@ -39,12 +39,12 @@ export function connectRoads(pieces: readonly Tile[], candidates: readonly Tile[
     [-1, 0],
     [0, -1],
   ] as const;
+  // Sorted by y, then x; each key is parsed once, not on every comparison.
   const sorted = (keys: Iterable<string>) =>
-    [...keys].sort((a, b) => {
-      const [ax, ay] = parse(a);
-      const [bx, by] = parse(b);
-      return ay - by || ax - bx;
-    });
+    [...keys]
+      .map((k) => ({ k, t: parse(k) }))
+      .sort((a, b) => a.t[1] - b.t[1] || a.t[0] - b.t[0])
+      .map((e) => e.k);
 
   const component = (start: string) => {
     const seen = new Set([start]);
@@ -63,7 +63,15 @@ export function connectRoads(pieces: readonly Tile[], candidates: readonly Tile[
   };
 
   for (;;) {
-    const first = sorted(road)[0];
+    let first: string | undefined;
+    let best: [number, number] | undefined;
+    for (const k of road) {
+      const t = parse(k);
+      if (!best || t[1] < best[1] || (t[1] === best[1] && t[0] < best[0])) {
+        first = k;
+        best = t;
+      }
+    }
     if (first === undefined) break;
     const joined = component(first);
     if (joined.size === road.size) break;
@@ -242,7 +250,7 @@ export function distanceFrom(
 /**
  * Nature on the free tiles: woods that thicken away from the city, groves of
  * trees, a bush or flowers here and there, flowers in the gardens between
- * buildings, and weeds on dirt. Everything comes from position hashes, so it
+ * buildings, weeds on dirt and street trees downtown. Everything comes from position hashes, so it
  * never depends on repository order.
  */
 export function decorateFree(
@@ -254,24 +262,46 @@ export function decorateFree(
     dirt: boolean;
     density: number;
     wild: number;
+    downtown?: boolean;
   }[],
 ): Decoration[] {
   const decorations: Decoration[] = [];
   const groves = new Map<string, ReturnType<typeof groveOf>>();
-  for (const { x, y, garden, dirt, density, wild } of free) {
+  for (const { x, y, garden, dirt, density, wild, downtown } of free) {
     const key = `${owner}:nature:${x},${y}`;
     const variant = roll(`${key}:v`, DECORATION_VARIANT_COUNT);
     const pick = roll(key, 100);
     let kind: string | null = null;
-    if (dirt) kind = pick < 35 ? "weeds" : pick < 42 ? "dead-tree" : null;
+    // Downtown is paved: a street tree now and then, nothing wild.
+    if (downtown) kind = pick < (garden ? 35 : 6) ? "tree" : null;
+    else if (dirt) kind = pick < 35 ? "weeds" : pick < 42 ? "dead-tree" : null;
     else if (garden) kind = pick < 30 ? "tree" : pick < 60 ? "flowers" : pick < 80 ? "bush" : null;
     else if (pick < wild) kind = pick < wild * 0.88 ? "tree" : "bush";
     else if (inGrove(owner, x, y, density, groves))
       kind = pick < 70 ? "tree" : pick < 85 ? "bush" : null;
     else kind = pick < 2 ? "bush" : pick < 3 ? "flowers" : null;
+    // Some street and garden trees are flowering ones.
+    if (kind === "tree" && (downtown || garden) && roll(`${key}:bloom`, 3) === 0) kind = "blossom";
     if (kind) decorations.push({ x, y, kind, variant, repoId: "nature" });
   }
   return decorations;
+}
+
+/**
+ * How many rings of blocks around the center are downtown: paved, with street
+ * trees instead of backyards. Downtown grows with the city, the way a dense
+ * core grows in city builders; a village or a small town has none (-1).
+ */
+export function downtownRadius(repoCount: number, village: boolean): number {
+  if (village || repoCount < 20) return -1;
+  if (repoCount < 100) return 0;
+  if (repoCount < 250) return 1;
+  return 2;
+}
+
+/** Ring of a block around the center block: 0 for the center, 1 for the eight around it... */
+export function ringOf(block: { x: number; y: number }): number {
+  return Math.max(Math.abs(block.x), Math.abs(block.y));
 }
 
 /** Free tiles next to an abandoned building turn to dirt. */

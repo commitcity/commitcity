@@ -22,7 +22,7 @@ Every statement in this document is tagged with one of three scope levels (see [
 
 CommitCity turns a developer's GitHub history into a **living, isometric pixel-art city**.
 
-Each repository becomes a building. How a repository looks — its size, style, district, and condition — is derived from real data: languages, stars, commit activity, age, and status. The city is **generated deterministically**: the same input always produces the same city, and a city grows outward over time instead of reshuffling itself.
+Each repository becomes a building, and every month of contributions becomes a house around them, so the city shows the work done in private repositories too (as counts only). How a repository looks — its size, style, district, and condition — is derived from real data: languages, stars, commit activity, age, and status. The city is **generated deterministically**: the same input always produces the same city, and a city grows outward over time instead of reshuffling itself.
 
 Users can explore their city like a small city-builder game: pan, zoom, inspect buildings, and share a public link to their city.
 
@@ -70,7 +70,7 @@ The minimum experience we are building toward:
 4. **Inspect a building**: select it to see the repository it represents.
 5. **Public city page**: a shareable URL for a user's city.
 
-Data source in current scope: **public repositories owned by the user**.
+Data sources in current scope: **public repositories owned by the user**, and the user's **public contribution calendar** (contributions per month, including the count of private contributions when the user chooses to show it on their profile).
 
 ### 5.2 Later
 
@@ -124,7 +124,7 @@ Data source in current scope: **public repositories owned by the user**.
 
 ### 6.3 Repository representation
 
-Each repository maps to **exactly one building**. The mapping below is a **proposal**; the final rules are specified in `ARCHITECTURE.md` and must be deterministic.
+Each repository maps to **one main building**; a busy repository also grows up to three smaller wings beside it, all showing the same repository. The mapping below is a **proposal**; the final rules are specified in `ARCHITECTURE.md` and must be deterministic.
 
 | Repository property | Proposed visual effect | Status |
 |---|---|---|
@@ -164,7 +164,8 @@ Rotation is part of the long-term experience but **not** part of the current sco
 
 ### 6.7 City size
 
-- **Small histories get small towns.** A user with one or two repositories gets a small village. The city is never padded with neutral filler buildings to look bigger.
+- **Small histories get small towns.** A user with one or two repositories and little activity gets a small village. **Every building stands for real data of the user** (a repository, a wing of a busy repository, or a month of contributions); the city is never padded with neutral filler buildings to look bigger.
+- **Everyday developers get real towns.** Most developers have 15–25 public repositories and do much of their work in private ones. Monthly contribution houses and repository wings let their activity show: a developer with 16 repositories and five active years gets a town of about 60 buildings instead of 16 houses.
 - **Large histories are capped.** Up to **300 repositories** are rendered as individual buildings. Above that, the least significant repositories (lowest activity and stars, forks and archived first) are aggregated into generic neighborhood blocks, which can be expanded in the info panel. The number 300 is a **proposal** to be validated by a rendering benchmark (see `ROADMAP.md`).
 
 ---
@@ -207,7 +208,7 @@ These are explicitly **out of scope** and should not be added without a new disc
 | CommitCity is a visualization, not a simulation | Confirmed |
 | TheoTown is a visual reference only; all assets original or licensed | Confirmed |
 | Deterministic, append-only city layout | Confirmed |
-| Current-scope data: public repositories owned by the user | Confirmed |
+| Current-scope data: public repositories owned by the user, and the public contribution calendar | Confirmed (calendar added 2026-10-23) |
 | Four-direction rotation deferred; architecture stays rotation-compatible | Confirmed |
 | Timelapse planned (later) | Confirmed |
 | Optional data sources selectable by the user (later) | Confirmed |
@@ -216,7 +217,7 @@ These are explicitly **out of scope** and should not be added without a new disc
 | Code under MIT, artwork under CC BY-SA 4.0 | Confirmed — details in `CONTRIBUTING.md` |
 | Repository-to-building mapping table | Proposal |
 | Forks are shown as smaller, annex-style buildings | Confirmed |
-| Small histories are shown as small villages, without filler | Confirmed |
+| Small histories are shown as small villages; every building stands for real data, never filler | Confirmed (reworded 2026-10-23) |
 | Individual-building limit of 300 repositories, then aggregation | Proposal — needs benchmark |
 | GitHub organization: [`commitcity`](https://github.com/commitcity) | Confirmed |
 

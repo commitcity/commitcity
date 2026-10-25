@@ -63,6 +63,8 @@ export function parkBlock(owner: string, rect: BlockRect, blockIndex: number): P
       repoId: id,
     });
   const r = (x: number, y: number, n: number) => roll(`${key(x, y)}:pick`, n);
+  // Flowering trees in a park all bloom in one colour.
+  const bloom = roll(`${owner}:park:${blockIndex}:bloom`, DECORATION_VARIANT_COUNT);
 
   const { x: x0, y: y0, w, h } = rect;
   const cx = x0 + Math.floor((w - 1) / 2);
@@ -94,12 +96,13 @@ export function parkBlock(owner: string, rect: BlockRect, blockIndex: number): P
         if (x === cx && y === cy) put(x, y, "fountain", 2);
         else if (corner) put(x, y, "lamp", 0);
         else if (edge && r(x, y, 4) === 0) put(x, y, "bench", bench);
-        else if (edge && r(x, y, 5) === 0) put(x, y, "tree");
+        else if (edge && r(x, y, 5) === 0) put(x, y, "blossom", bloom);
       } else {
         const pick = r(x, y, 10);
         if (x === cx && y === cy) put(x, y, "fountain", 0);
         else if (corner) put(x, y, "lamp", 2);
-        else if (pick <= 2) put(x, y, "tree");
+        else if (pick === 1) put(x, y, "blossom", bloom);
+        else if (pick === 2) put(x, y, "tree");
         else if (pick <= 4) put(x, y, "flowers");
         else if (pick === 5) put(x, y, "bush");
         else if (pick === 6 && edge) put(x, y, "bench", bench);

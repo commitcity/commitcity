@@ -78,3 +78,55 @@ export interface OwnerResponse {
   data?: { repositoryOwner: OwnerPage | null } | null;
   errors?: GraphQLError[];
 }
+
+/** Years the owner has contributions in, newest first. Null for an organization. */
+export const ACTIVITY_YEARS_QUERY = `
+query ActivityYears($login: String!) {
+  user(login: $login) {
+    contributionsCollection { contributionYears }
+  }
+}
+`;
+
+/**
+ * One year of the contribution calendar, month by month: an aliased
+ * `contributionsCollection` per month (`m01` to `m12`). Months are UTC calendar
+ * months; `restrictedContributionsCount` is what the owner shares of private work,
+ * as a count only. Months after `until` are left out.
+ */
+export function activityYearQuery(year: number, until: Date): string {
+  const months: string[] = [];
+  for (let m = 1; m <= 12; m++) {
+    const from = new Date(Date.UTC(year, m - 1, 1));
+    if (from > until) break;
+    const to = new Date(Date.UTC(year, m, 1) - 1000);
+    months.push(
+      `m${String(m).padStart(2, "0")}: contributionsCollection(from: "${from.toISOString()}", to: "${to.toISOString()}") {
+      contributionCalendar { totalContributions }
+      restrictedContributionsCount
+    }`,
+    );
+  }
+  return `
+query ActivityYear($login: String!) {
+  user(login: $login) {
+    ${months.join("\n    ")}
+  }
+}
+`;
+}
+
+export interface ActivityYearsResponse {
+  data?: { user: { contributionsCollection: { contributionYears: number[] } } | null } | null;
+  errors?: GraphQLError[];
+}
+
+export interface MonthNode {
+  contributionCalendar: { totalContributions: number };
+  restrictedContributionsCount: number;
+}
+
+export interface ActivityYearResponse {
+  data?: { user: Record<string, MonthNode | null> | null } | null;
+  errors?: GraphQLError[];
+}

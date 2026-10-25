@@ -296,10 +296,12 @@ All thresholds are **proposals** to be tuned with real data.
 
 | Attribute | Rule |
 |---|---|
-| **Footprint** | From stars on a log scale: 0–9 → 1, 10–99 → 2, 100–999 → 3, ≥ 1000 → 4. |
+| **Footprint** | The larger of two scales. Stars, on a log scale: 0–9 → 1, 10–99 → 2, 100–999 → 3, ≥ 1000 → 4. Commits, so an everyday developer's active projects are big buildings even without stars: < 100 → 1, < 400 → 2, < 3000 → 3, ≥ 3000 → 4 (unknown → 1). Forks use stars only, since their commits are mostly their upstream's. |
 | **Level** | From `commitCount`: < 50 → 1, < 500 → 2, ≥ 500 → 3. If `commitCount` is unknown, level 1. |
 | **Family** | From `primaryLanguage` through a mapping table (for example web languages → `modern`, systems languages → `industrial`, scripting languages → `brick`, documentation/config → `residential`). Unknown languages: chosen from the repository's random stream, never `village`. In a village (§6.3.1) every building is `village`. |
 | **Variant** | `abandoned` if archived, otherwise `default`. |
+| **Wings** | A busy repository grows extra buildings beside its main one: one wing per 300 commits, at most 3, none for forks. A wing is one size smaller than the main building (minimum 1), shares its family, level and variant, and is placed right after it, so it stands beside it along the street. Every wing shows the same repository on hover and selection. |
+| **Houses** | Every month of `CityInput.activity` with contributions is a house (`repoId` `month:YYYY-MM`): family `residential` (`village` in a village), 2 × 2 from 150 contributions, else 1 × 1; level 1 under 20 contributions, 2 under 80, else 3. Houses and repositories are placed together in time order (a month at its first day), so a new month or repository only ever adds at the edge. Hover and selection show the month and its counts. |
 | **Annex** | Forks: footprint reduced by one (minimum 1) and `isAnnex = true`. |
 | **Manifest** | Chosen among manifests matching family, footprint, level, and variant (see below). If none match, relax family first, then level. A placeholder exists for every footprint, so the search always succeeds. |
 
@@ -407,6 +409,7 @@ The adapter lives in `src/data/github` (milestone 5.1). `fetchCityInput(login, o
 | Topic | Approach | Status |
 |---|---|---|
 | API | GitHub GraphQL API: one query on `repositoryOwner`, so users and organizations both work. It returns public repositories the owner owns, oldest first, 100 per page, with stars, primary language, dates, fork and archive flags. A lookup stops after 1,000 repositories; generation handles large accounts (§6.7). | Confirmed |
+| Contribution calendar | For users (not organizations), `fetchCityInput(…, { activity: true })` also reads the contribution calendar: one query for `contributionYears`, then one query per year (the 10 most recent) with an aliased `contributionsCollection` per UTC month, giving `contributionCalendar.totalContributions` and `restrictedContributionsCount` (private work the user chooses to show, as a count only). Any failure there leaves `CityInput.activity` out instead of failing the lookup. `getCityInput` turns it on. | Confirmed |
 | Owner | `CityInput.owner` is the login as GitHub spells it, so every spelling of a login gives the same city seed. | Confirmed |
 | Commit counts | Fetched in the same query through the default branch `history.totalCount`. Empty repositories, branches that point at a tag, and counts that time out (an error next to the data) give `null`. If large accounts make pages slow, drop the field or fetch it separately. | Confirmed (watch) |
 | Errors | Every failure is a typed result, never an exception: `invalid-login` (checked before any request), `not-found`, `rate-limited` (with the reset time from the headers), `unauthorized` (token missing or wrong), `unavailable` (network, server error, unexpected data). | Confirmed |

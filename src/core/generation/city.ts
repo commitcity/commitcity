@@ -1,8 +1,24 @@
 import type { AssetCatalog } from "@/core/assets";
-import type { Building, CityInput, CityModel, Decoration, GroundKind } from "@/core/model";
+import {
+  type Building,
+  type CityInput,
+  type CityModel,
+  type Decoration,
+  type GroundKind,
+  MONTH_PREFIX,
+} from "@/core/model";
 import { hash53, repoStream } from "@/core/random";
 import { GENERATOR_VERSION } from "@/core/version";
-import { VILLAGE_MAX_REPOS, buildingTraits, createBuilding, designOf, modelOf } from "./buildings";
+import {
+  VILLAGE_MAX_REPOS,
+  buildingTraits,
+  createBuilding,
+  designOf,
+  houseTraits,
+  modelOf,
+  wingTraits,
+  wingsFromCommits,
+} from "./buildings";
 import { StreetGrid } from "./grid";
 import { sortRepos } from "./order";
 import { MAIN_STREET_BLOCK, packBuildings } from "./packing";
@@ -13,9 +29,11 @@ import {
   decorateFree,
   dirtAround,
   distanceFrom,
+  downtownRadius,
   fillGround,
   inGrove,
   inMeadow,
+  ringOf,
   roadAlong,
   uniqueRoads,
   wildness,
@@ -26,6 +44,13 @@ const GAP_CHANCE = 8;
 /** Drawings are not repeated within this many tiles, models not right next door. */
 const DESIGN_RADIUS = 8;
 const MODEL_RADIUS = 3;
+/**
+ * A big building (3 × 3 or 4 × 4) is a landmark of the skyline: its model is not
+ * repeated within this many tiles while any other model fits.
+ */
+const LANDMARK_RADIUS = 14;
+/** Downtown pavement reaches this many tiles from a building, within its block. */
+const PAVED_REACH = 2;
 
 /**
  * CityInput + AssetCatalog → CityModel (ARCHITECTURE.md §6.1). Pure and
@@ -39,24 +64,53 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
   const repos = sortRepos(input.repos);
   const grid = new StreetGrid(owner);
   const village = repos.length <= VILLAGE_MAX_REPOS;
-  const traits = repos.map((repo) =>
-    buildingTraits(repo, repoStream(owner, repo.id, "building"), village),
-  );
+  // Every repository is a main building, followed by the wings a busy one grows,
+  // so the wings stand right beside it along the street. A garden comes after the
+  // last of them. Every month with contributions is a house. Repositories and
+  // months are placed in the order they happened, so the city only ever grows at
+  // its edge (docs/decisions/0002-*).
+  const groups = [
+    ...repos.map((repo) => {
+      const main = buildingTraits(repo, repoStream(owner, repo.id, "building"), village);
+      const wings = wingsFromCommits(repo.commitCount, repo.isFork);
+      const gap = hash53(`${owner}:gap:${repo.id}`) % GAP_CHANCE === 0;
+      return {
+        at: Date.parse(repo.createdAt),
+        id: repo.id,
+        parts: [
+          { id: repo.id, traits: main, wing: 0, gap: gap && wings === 0 },
+          ...Array.from({ length: wings }, (_, i) => ({
+            id: repo.id,
+            traits: wingTraits(main),
+            wing: i + 1,
+            gap: gap && i + 1 === wings,
+          })),
+        ],
+      };
+    }),
+    ...(input.activity ?? [])
+      .filter((m) => m.contributions > 0)
+      .map((m) => ({
+        at: Date.parse(`${m.month}-01T00:00:00Z`),
+        id: `${MONTH_PREFIX}${m.month}`,
+        parts: [
+          { id: `${MONTH_PREFIX}${m.month}`, traits: houseTraits(m, village), wing: 0, gap: false },
+        ],
+      })),
+  ].sort((a, b) => a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const parts = groups.flatMap((g) => g.parts);
   const { placements, blocks } = packBuildings(
     grid,
-    traits.map((t, i) => ({
-      footprint: t.footprint,
-      gap: hash53(`${owner}:gap:${repos[i]!.id}`) % GAP_CHANCE === 0,
-    })),
+    parts.map((p) => ({ footprint: p.traits.footprint, gap: p.gap })),
     (k) => isParkBlock(owner, k),
   );
 
   // Buildings in placement order, each steering away from its neighbours' drawings.
   const buildings: Building[] = [];
   const looks: { design: string; model: string }[] = [];
-  repos.forEach((repo, i) => {
+  parts.forEach(({ id, traits, wing }, i) => {
     const p = placements[i]!;
-    const f = traits[i]!.footprint;
+    const f = traits.footprint;
     // Tiles between two footprints: 0 when they touch.
     const gap = (b: Building) =>
       Math.max(
@@ -66,24 +120,26 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
         b.origin.y - (p.origin.y + f),
         p.origin.y - (b.origin.y + b.footprint),
       );
+    const modelRadius = f >= 3 ? LANDMARK_RADIUS : MODEL_RADIUS;
+    const reach = Math.max(DESIGN_RADIUS, modelRadius);
     const designs = new Map<string, number>();
     const models = new Map<string, number>();
     for (const [j, b] of buildings.entries()) {
       const g = gap(b);
-      if (g >= DESIGN_RADIUS) continue;
+      if (g >= reach) continue;
       const { design, model } = looks[j]!;
       if (g < DESIGN_RADIUS) designs.set(design, Math.min(g, designs.get(design) ?? g));
-      if (g < MODEL_RADIUS) models.set(model, Math.min(g, models.get(model) ?? g));
+      if (g < modelRadius) models.set(model, Math.min(g, models.get(model) ?? g));
     }
     // The closer a repeat, the worse: the same drawing counts double the same model.
     const penalty = (id: string) => {
       const d = designs.get(designOf(id));
       const m = models.get(modelOf(id));
       return (
-        (d === undefined ? 0 : 2 * (DESIGN_RADIUS - d)) + (m === undefined ? 0 : MODEL_RADIUS - m)
+        (d === undefined ? 0 : 2 * (DESIGN_RADIUS - d)) + (m === undefined ? 0 : modelRadius - m)
       );
     };
-    const building = createBuilding(owner, repo, traits[i]!, p, catalog, (m) => penalty(m.id));
+    const building = createBuilding(owner, { id }, traits, p, catalog, (m) => penalty(m.id), wing);
     buildings.push(building);
     looks.push({ design: designOf(building.manifestId), model: modelOf(building.manifestId) });
   });
@@ -163,6 +219,24 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
   for (const b of used)
     for (let dx = 0; dx < b.rect.w; dx++)
       for (let dy = 0; dy < b.rect.h; dy++) inBlock.add(key(b.rect.x + dx, b.rect.y + dy));
+  // Downtown: around the buildings of the blocks nearest the center the ground is
+  // paved, like the dense core of a city builder, while the suburbs keep their
+  // gardens and groves. A block still filling up keeps its empty part green.
+  const radius = downtownRadius(groups.length, village);
+  const downtown = new Set<string>();
+  const byIndex = new Map(blocks.map((b) => [b.index, b]));
+  buildings.forEach((b, i) => {
+    const space = byIndex.get(placements[i]!.blockIndex)!;
+    // Both sides of the main street belong to downtown.
+    const ring = space.index === MAIN_STREET_BLOCK ? 0 : ringOf(space.rect.block);
+    if (ring > radius) return;
+    for (let dx = -PAVED_REACH; dx < b.footprint + PAVED_REACH; dx++)
+      for (let dy = -PAVED_REACH; dy < b.footprint + PAVED_REACH; dy++) {
+        const x = b.origin.x + dx;
+        const y = b.origin.y + dy;
+        if (space.inside(x, y)) downtown.add(key(x, y));
+      }
+  });
 
   // The countryside grows wilder away from anything built: woods close in at the
   // edge, with a shaded floor under them, and lighter meadows in the open grass.
@@ -176,6 +250,11 @@ export function generateCity(input: CityInput, catalog: AssetCatalog): CityModel
       const k = key(x, y);
       if (blocked.has(k) || inPark.has(k) || kinds.get(k) === "water") continue;
       const garden = gardens.has(k);
+      if (downtown.has(k) && kinds.get(k) !== "dirt") {
+        if (!kinds.has(k)) kinds.set(k, "pavement");
+        free.push({ x, y, garden, dirt: false, density: 0, wild: 0, downtown: true });
+        continue;
+      }
       // Land nothing is built on yet, in a block or out of town, goes back to the woods.
       const wild = garden ? 0 : wildness(owner, x, y, distance.get(k) ?? 0);
       // Fewer groves inside blocks (backyards) than in the countryside.

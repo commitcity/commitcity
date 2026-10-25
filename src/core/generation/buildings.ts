@@ -5,7 +5,7 @@ import {
   type Family,
   type Variant,
 } from "@/core/assets";
-import type { Building, Facing, Footprint, RepoInput } from "@/core/model";
+import type { Building, Facing, Footprint, MonthInput, RepoInput } from "@/core/model";
 import { type Random, hash53, repoSeed } from "@/core/random";
 
 // Repository-to-building mapping (ARCHITECTURE.md §6.5). Thresholds are proposals
@@ -18,6 +18,31 @@ export function footprintFromStars(stars: number): Footprint {
   if (stars >= 100) return 3;
   if (stars >= 10) return 2;
   return 1;
+}
+
+/**
+ * < 100 commits → 1, < 400 → 2, < 3000 → 3, otherwise 4. Few repositories have
+ * ten stars, so without this an everyday developer's city is all 1 × 1 houses;
+ * a project with a few hundred commits is a big building whatever its stars.
+ */
+export function footprintFromCommits(commitCount: number | null): Footprint {
+  if (commitCount === null || commitCount < 100) return 1;
+  if (commitCount < 400) return 2;
+  if (commitCount < 3000) return 3;
+  return 4;
+}
+
+/** Commits per extra wing, and the most wings one repository grows. */
+export const COMMITS_PER_WING = 300;
+export const MAX_WINGS = 3;
+
+/**
+ * Extra wings beside a repository's main building: one per 300 commits, at most
+ * three. A fork has none, since its commits are mostly its upstream's.
+ */
+export function wingsFromCommits(commitCount: number | null, isFork: boolean): number {
+  if (isFork || commitCount === null) return 0;
+  return Math.min(MAX_WINGS, Math.floor(commitCount / COMMITS_PER_WING));
 }
 
 /** < 50 commits → 1, < 500 → 2, otherwise 3. Unknown commit counts are level 1. */
@@ -160,7 +185,13 @@ export function buildingTraits(repo: RepoInput, random: Random, village = false)
   const language = familyFromLanguage(repo.primaryLanguage, random);
   const family: Family = village ? "village" : language;
   const isAnnex = repo.isFork;
-  const base = footprintFromStars(repo.stars);
+  // A fork's commits are mostly its upstream's, so only its stars count.
+  const base = isAnnex
+    ? footprintFromStars(repo.stars)
+    : (Math.max(
+        footprintFromStars(repo.stars),
+        footprintFromCommits(repo.commitCount),
+      ) as Footprint);
   return {
     family,
     footprint: (isAnnex ? Math.max(1, base - 1) : base) as Footprint,
@@ -170,16 +201,39 @@ export function buildingTraits(repo: RepoInput, random: Random, village = false)
   };
 }
 
+/**
+ * A house of the contribution calendar: one per month with contributions,
+ * private ones included. A busy month (150 or more) is a 2 × 2 house; the level
+ * (storeys) grows at 20 and 80 contributions.
+ */
+export function houseTraits(month: MonthInput, village: boolean): BuildingTraits {
+  const n = month.contributions;
+  return {
+    family: village ? "village" : "residential",
+    footprint: n >= 150 ? 2 : 1,
+    level: n < 20 ? 1 : n < 80 ? 2 : 3,
+    variant: "default",
+    isAnnex: false,
+  };
+}
+
+/** A wing is one size smaller than its main building, and otherwise alike. */
+export function wingTraits(main: BuildingTraits): BuildingTraits {
+  return { ...main, footprint: Math.max(1, main.footprint - 1) as Footprint };
+}
+
 /** The building for one repository at its place along a street, facing that street. */
 export function createBuilding(
   owner: string,
-  repo: RepoInput,
+  repo: { id: string },
   traits: BuildingTraits,
   placement: { origin: { x: number; y: number }; facing: Facing },
   catalog: AssetCatalog,
   penalty?: (manifest: BuildingManifest) => number,
+  wing = 0,
 ): Building {
-  const manifest = chooseManifest(catalog, repoSeed(owner, repo.id), traits, penalty);
+  const seed = repoSeed(owner, repo.id) + (wing ? `:wing:${wing}` : "");
+  const manifest = chooseManifest(catalog, seed, traits, penalty);
   return {
     repoId: repo.id,
     manifestId: manifest.id,
@@ -190,5 +244,6 @@ export function createBuilding(
     level: traits.level,
     variant: traits.variant,
     isAnnex: traits.isAnnex,
+    ...(wing ? { wing } : {}),
   };
 }

@@ -3,6 +3,7 @@ import edgeCases from "../../../fixtures/edge-cases.json";
 import large from "../../../fixtures/large.json";
 import medium from "../../../fixtures/medium.json";
 import tiny from "../../../fixtures/tiny.json";
+import typical from "../../../fixtures/typical.json";
 import { PLACEHOLDER_CATALOG, PLACEHOLDER_MANIFESTS, createCatalog } from "@/core/assets";
 import { type CityInput, type CityModel, parseCityInput } from "@/core/model";
 import { hash53 } from "@/core/random";
@@ -12,6 +13,7 @@ import { findCollisions } from "./invariants";
 
 const FIXTURES: Record<string, CityInput> = {
   tiny: parseCityInput(tiny),
+  typical: parseCityInput(typical),
   medium: parseCityInput(medium),
   large: parseCityInput(large),
   "edge-cases": parseCityInput(edgeCases),
@@ -77,11 +79,18 @@ describe("generateCity", () => {
       PLACEHOLDER_CATALOG,
     );
     for (const building of before.buildings) expect(after.buildings).toContainEqual(building);
-    // Nature only gives way where the new building or its road now stands.
+    // Nature only gives way where the new building or its road now stands, where
+    // downtown has paved around it, and as the woods draw back a little from it.
     const added = after.buildings.find((b) => b.repoId === "R_new")!;
     const taken = new Set(after.roads.map((r) => `${r.x},${r.y}`));
-    for (let dx = 0; dx < added.footprint; dx++)
-      for (let dy = 0; dy < added.footprint; dy++)
+    const paved = new Set(
+      before.ground.filter((g) => g.kind === "pavement").map((g) => `${g.x},${g.y}`),
+    );
+    for (const g of after.ground)
+      if (g.kind === "pavement" && !paved.has(`${g.x},${g.y}`)) taken.add(`${g.x},${g.y}`);
+    const reach = 3;
+    for (let dx = -reach; dx < added.footprint + reach; dx++)
+      for (let dy = -reach; dy < added.footprint + reach; dy++)
         taken.add(`${added.origin.x + dx},${added.origin.y + dy}`);
     for (const decoration of before.decorations)
       if (!taken.has(`${decoration.x},${decoration.y}`))
@@ -93,6 +102,79 @@ describe("generateCity", () => {
       new Set(model.decorations.filter((d) => d.repoId.startsWith("park:")).map((d) => d.repoId));
     expect(parks(generateCity(FIXTURES.large!, PLACEHOLDER_CATALOG)).size).toBeGreaterThan(0);
     expect(parks(generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG)).size).toBe(0);
+  });
+
+  it("paves downtown in a city, but not in a village", () => {
+    const paved = (model: CityModel) => model.ground.filter((g) => g.kind === "pavement");
+    const parkPavement = (model: CityModel) => {
+      const parkTiles = new Set(
+        model.decorations.filter((d) => d.repoId.startsWith("park:")).map((d) => `${d.x},${d.y}`),
+      );
+      return parkTiles.size;
+    };
+    const tiny = generateCity(FIXTURES.tiny!, PLACEHOLDER_CATALOG);
+    expect(paved(tiny)).toEqual([]);
+    for (const input of [FIXTURES.medium!, FIXTURES.large!]) {
+      const model = generateCity(input, PLACEHOLDER_CATALOG);
+      expect(paved(model).length).toBeGreaterThan(parkPavement(model));
+      // Nothing wild grows on pavement: street trees only, some of them flowering.
+      const pavement = new Set(paved(model).map((g) => `${g.x},${g.y}`));
+      const onPavement = model.decorations.filter(
+        (d) => d.repoId === "nature" && pavement.has(`${d.x},${d.y}`),
+      );
+      expect(onPavement.every((d) => d.kind === "tree" || d.kind === "blossom")).toBe(true);
+    }
+    // The larger the city, the larger its downtown.
+    const medium = paved(generateCity(FIXTURES.medium!, PLACEHOLDER_CATALOG)).length;
+    const large = paved(generateCity(FIXTURES.large!, PLACEHOLDER_CATALOG)).length;
+    expect(large).toBeGreaterThan(medium);
+  });
+
+  it("grows wings beside the main building of a busy repository", () => {
+    const input = FIXTURES.medium!;
+    const model = generateCity(input, PLACEHOLDER_CATALOG);
+    for (const repo of input.repos) {
+      const parts = model.buildings.filter((b) => b.repoId === repo.id);
+      const wings = repo.isFork ? 0 : Math.min(3, Math.floor((repo.commitCount ?? 0) / 300));
+      expect(parts.length).toBe(1 + wings);
+      const main = parts.find((b) => !b.wing)!;
+      for (const w of parts.filter((b) => b.wing)) {
+        expect(w.footprint).toBe(Math.max(1, main.footprint - 1));
+        expect(w.family).toBe(main.family);
+      }
+    }
+    expect(model.buildings.some((b) => b.wing)).toBe(true);
+  });
+
+  it("builds a house for every month with contributions", () => {
+    const input = FIXTURES.typical!;
+    const model = generateCity(input, PLACEHOLDER_CATALOG);
+    const houses = model.buildings.filter((b) => b.repoId.startsWith("month:"));
+    const active = input.activity!.filter((m) => m.contributions > 0);
+    expect(houses.map((h) => h.repoId).sort()).toEqual(active.map((m) => `month:${m.month}`));
+    expect(houses.every((h) => h.family === "residential")).toBe(true);
+    // Far more buildings than repositories.
+    expect(model.buildings.length).toBeGreaterThan(2 * input.repos.length);
+    // Without the calendar, the same account is only its repositories.
+    const bare = generateCity({ ...input, activity: undefined }, PLACEHOLDER_CATALOG);
+    expect(bare.buildings.some((b) => b.repoId.startsWith("month:"))).toBe(false);
+  });
+
+  it("keeps every building in place when a new month of contributions comes in", () => {
+    const input = FIXTURES.typical!;
+    const before = generateCity(input, PLACEHOLDER_CATALOG);
+    const after = generateCity(
+      {
+        ...input,
+        activity: [
+          ...input.activity!,
+          { month: "2026-10", contributions: 30, privateContributions: 10 },
+        ],
+      },
+      PLACEHOLDER_CATALOG,
+    );
+    for (const building of before.buildings) expect(after.buildings).toContainEqual(building);
+    expect(after.buildings).toHaveLength(before.buildings.length + 1);
   });
 
   it("builds a village of wooden houses for a handful of repositories", () => {
@@ -187,6 +269,35 @@ describe("generateCity", () => {
     }
   });
 
+  it("spreads the models of big buildings across the skyline", () => {
+    // Six models per family and size, ids shaped like the real ones: family-model-….
+    const catalog = createCatalog(
+      [1, 2, 3, 4, 5, 6].flatMap((k) =>
+        PLACEHOLDER_MANIFESTS.map((m) => ({ ...m, id: `${m.family}-m${k}-${m.id}` })),
+      ),
+    );
+    const model = generateCity(FIXTURES.large!, catalog);
+    const big = model.buildings.filter((b) => b.footprint >= 3);
+    const modelOf = (id: string) => id.split("-").slice(0, 2).join("-");
+    let close = 0;
+    for (const [i, a] of big.entries())
+      for (const b of big.slice(i + 1)) {
+        const gap = Math.max(
+          0,
+          b.origin.x - (a.origin.x + a.footprint),
+          a.origin.x - (b.origin.x + b.footprint),
+          b.origin.y - (a.origin.y + a.footprint),
+          a.origin.y - (b.origin.y + b.footprint),
+        );
+        if (gap < 10 && a.family === b.family && a.footprint === b.footprint)
+          if (modelOf(a.manifestId) === modelOf(b.manifestId)) close++;
+      }
+    expect(big.length).toBeGreaterThan(20);
+    // Within 10 tiles a model repeats only when all six are already close by:
+    // 3 pairs here, against 7 when big buildings only avoid their next-door models.
+    expect(close).toBeLessThanOrEqual(3);
+  });
+
   it("never puts a building, road or decoration on water", () => {
     for (const input of Object.values(FIXTURES)) {
       const model = generateCity(input, PLACEHOLDER_CATALOG);
@@ -226,17 +337,15 @@ describe("generateCity", () => {
     };
     const after = generateCity(input, createCatalog([...PLACEHOLDER_MANIFESTS, added]));
 
-    const changed = before.buildings.filter(
-      (b, i) => b.manifestId !== after.buildings[i]!.manifestId,
-    );
+    const changed = before.buildings
+      .map((b, i) => ({ b, now: after.buildings[i]! }))
+      .filter(({ b, now }) => b.manifestId !== now.manifestId);
     expect(changed.length).toBeGreaterThan(0);
     expect(changed.length / before.buildings.length).toBeLessThan(0.5);
     // Only buildings the new manifest fits can switch, and only to it.
-    for (const b of changed) {
+    for (const { b, now } of changed) {
       expect(b).toMatchObject({ family: "brick", footprint: 2 });
-      expect(after.buildings.find((a) => a.repoId === b.repoId)!.manifestId).toBe(
-        "new-brick-office",
-      );
+      expect(now.manifestId).toBe("new-brick-office");
     }
     // Everything except the manifest choice stays put.
     expect(after.buildings.map((b) => ({ ...b, manifestId: "" }))).toEqual(

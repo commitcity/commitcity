@@ -1,4 +1,4 @@
-import { type CityInput, type RepoInput, parseCityInput } from "@/core/model";
+import { type CityInput, type MonthInput, type RepoInput, parseCityInput } from "@/core/model";
 import type { RepoNode } from "./query";
 
 /** One API repository as a `RepoInput`. Missing commit counts become null. */
@@ -26,10 +26,12 @@ export function normalizeOwner(
   owner: string,
   nodes: readonly RepoNode[],
   snapshotAt: Date,
+  activity: readonly MonthInput[] | null = null,
 ): CityInput {
   return parseCityInput({
     owner,
     snapshotAt: snapshotAt.toISOString(),
     repos: nodes.map(normalizeRepo),
+    ...(activity ? { activity } : {}),
   });
 }

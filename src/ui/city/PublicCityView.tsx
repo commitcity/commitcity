@@ -6,7 +6,7 @@ import type { CityInput } from "@/core/model";
 import type { Orientation } from "@/core/view";
 import { cue } from "@/ui/sound/sound";
 import { SoundToggle } from "@/ui/sound/SoundToggle";
-import { InfoPanel } from "./InfoPanel";
+import { InfoPanel, MonthPanel, monthSummary } from "./InfoPanel";
 import { type ViewParams, viewQuery } from "./params";
 import { useCity } from "./useCity";
 
@@ -22,6 +22,8 @@ export function PublicCityView({ input, initial }: { input: CityInput; initial: 
     selected,
     select,
     hovered,
+    selectedMonth,
+    hoveredMonth,
   } = useCity(input, initial);
 
   useEffect(() => {
@@ -79,8 +81,13 @@ export function PublicCityView({ input, initial }: { input: CityInput; initial: 
         <IconButton icon="plus" label="Zoom in (+)" onClick={() => setZoom(zoom + 1)} />
         <SoundToggle />
       </nav>
-      <div ref={tipRef} className="city-tip ui-parchment" hidden={!hovered} aria-live="polite">
-        {hovered?.name}
+      <div
+        ref={tipRef}
+        className="city-tip ui-parchment"
+        hidden={!hovered && !hoveredMonth}
+        aria-live="polite"
+      >
+        {hovered?.name ?? (hoveredMonth && monthSummary(hoveredMonth))}
       </div>
       {input.repos.length === 0 && (
         <p className="city-empty ui-note ui-parchment">
@@ -88,6 +95,7 @@ export function PublicCityView({ input, initial }: { input: CityInput; initial: 
         </p>
       )}
       {selected && <InfoPanel owner={input.owner} repo={selected} onClose={() => select(null)} />}
+      {selectedMonth && <MonthPanel month={selectedMonth} onClose={() => select(null)} />}
     </div>
   );
 }

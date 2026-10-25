@@ -1,0 +1,500 @@
+{
+  "owner": "typical-dev",
+  "snapshotAt": "2026-10-01T00:00:00Z",
+  "repos": [
+    {
+      "id": "R_typical-dev_001",
+      "name": "dotfiles",
+      "description": null,
+      "createdAt": "2021-01-01T00:00:00Z",
+      "pushedAt": "2022-01-01T10:00:00Z",
+      "primaryLanguage": "TypeScript",
+      "stars": 0,
+      "commitCount": 42,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_002",
+      "name": "portfolio",
+      "description": null,
+      "createdAt": "2021-08-12T05:13:00Z",
+      "pushedAt": "2022-08-12T10:00:00Z",
+      "primaryLanguage": "JavaScript",
+      "stars": 3,
+      "commitCount": 180,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_003",
+      "name": "todo-api",
+      "description": null,
+      "createdAt": "2021-03-23T10:26:00Z",
+      "pushedAt": "2022-03-23T10:00:00Z",
+      "primaryLanguage": "Python",
+      "stars": 12,
+      "commitCount": 520,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_004",
+      "name": "chat-app",
+      "description": null,
+      "createdAt": "2021-10-07T15:39:00Z",
+      "pushedAt": "2022-10-07T10:00:00Z",
+      "primaryLanguage": "Go",
+      "stars": 1,
+      "commitCount": 96,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_005",
+      "name": "blog",
+      "description": null,
+      "createdAt": "2022-05-18T20:52:00Z",
+      "pushedAt": "2023-05-18T10:00:00Z",
+      "primaryLanguage": "Rust",
+      "stars": 0,
+      "commitCount": 12,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_006",
+      "name": "cli-tools",
+      "description": null,
+      "createdAt": "2022-12-02T01:05:00Z",
+      "pushedAt": "2023-12-02T10:00:00Z",
+      "primaryLanguage": "CSS",
+      "stars": 4,
+      "commitCount": 310,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_007",
+      "name": "algorithms",
+      "description": null,
+      "createdAt": "2022-07-13T06:18:00Z",
+      "pushedAt": "2023-07-13T10:00:00Z",
+      "primaryLanguage": "Shell",
+      "stars": 0,
+      "commitCount": 8,
+      "isFork": false,
+      "isArchived": true
+    },
+    {
+      "id": "R_typical-dev_008",
+      "name": "weather-bot",
+      "description": null,
+      "createdAt": "2023-02-24T11:31:00Z",
+      "pushedAt": "2024-02-24T10:00:00Z",
+      "primaryLanguage": "Java",
+      "stars": 0,
+      "commitCount": 64,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_009",
+      "name": "landing-page",
+      "description": null,
+      "createdAt": "2023-09-08T16:44:00Z",
+      "pushedAt": "2024-09-08T10:00:00Z",
+      "primaryLanguage": "HTML",
+      "stars": 2,
+      "commitCount": 150,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_010",
+      "name": "game-jam",
+      "description": null,
+      "createdAt": "2023-04-19T21:57:00Z",
+      "pushedAt": "2024-04-19T10:00:00Z",
+      "primaryLanguage": null,
+      "stars": 7,
+      "commitCount": 950,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_011",
+      "name": "budget-tracker",
+      "description": null,
+      "createdAt": "2024-11-03T02:10:00Z",
+      "pushedAt": "2025-11-03T10:00:00Z",
+      "primaryLanguage": "TypeScript",
+      "stars": 0,
+      "commitCount": 27,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_012",
+      "name": "scraper",
+      "description": null,
+      "createdAt": "2024-06-14T07:23:00Z",
+      "pushedAt": "2025-06-14T10:00:00Z",
+      "primaryLanguage": "JavaScript",
+      "stars": 1,
+      "commitCount": 230,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_013",
+      "name": "notes",
+      "description": null,
+      "createdAt": "2024-01-25T12:36:00Z",
+      "pushedAt": "2025-01-25T10:00:00Z",
+      "primaryLanguage": "Python",
+      "stars": 0,
+      "commitCount": 5,
+      "isFork": true,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_014",
+      "name": "react-sandbox",
+      "description": null,
+      "createdAt": "2025-08-09T17:49:00Z",
+      "pushedAt": "2026-08-09T10:00:00Z",
+      "primaryLanguage": "Go",
+      "stars": 0,
+      "commitCount": 73,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_015",
+      "name": "infra",
+      "description": null,
+      "createdAt": "2025-03-20T22:02:00Z",
+      "pushedAt": "2026-03-20T10:00:00Z",
+      "primaryLanguage": "Rust",
+      "stars": 2,
+      "commitCount": 410,
+      "isFork": false,
+      "isArchived": false
+    },
+    {
+      "id": "R_typical-dev_016",
+      "name": "snake",
+      "description": null,
+      "createdAt": "2025-10-04T03:15:00Z",
+      "pushedAt": "2026-10-04T10:00:00Z",
+      "primaryLanguage": "CSS",
+      "stars": 0,
+      "commitCount": 18,
+      "isFork": false,
+      "isArchived": false
+    }
+  ],
+  "activity": [
+    {
+      "month": "2021-10",
+      "contributions": 82,
+      "privateContributions": 25
+    },
+    {
+      "month": "2021-11",
+      "contributions": 29,
+      "privateContributions": 9
+    },
+    {
+      "month": "2021-12",
+      "contributions": 52,
+      "privateContributions": 35
+    },
+    {
+      "month": "2022-01",
+      "contributions": 4,
+      "privateContributions": 2
+    },
+    {
+      "month": "2022-02",
+      "contributions": 17,
+      "privateContributions": 9
+    },
+    {
+      "month": "2022-03",
+      "contributions": 100,
+      "privateContributions": 55
+    },
+    {
+      "month": "2022-04",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2022-05",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2022-06",
+      "contributions": 82,
+      "privateContributions": 30
+    },
+    {
+      "month": "2022-07",
+      "contributions": 19,
+      "privateContributions": 6
+    },
+    {
+      "month": "2022-08",
+      "contributions": 10,
+      "privateContributions": 5
+    },
+    {
+      "month": "2022-09",
+      "contributions": 21,
+      "privateContributions": 7
+    },
+    {
+      "month": "2022-10",
+      "contributions": 70,
+      "privateContributions": 38
+    },
+    {
+      "month": "2022-11",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2022-12",
+      "contributions": 67,
+      "privateContributions": 41
+    },
+    {
+      "month": "2023-01",
+      "contributions": 8,
+      "privateContributions": 4
+    },
+    {
+      "month": "2023-02",
+      "contributions": 5,
+      "privateContributions": 2
+    },
+    {
+      "month": "2023-03",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2023-04",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2023-05",
+      "contributions": 4,
+      "privateContributions": 1
+    },
+    {
+      "month": "2023-06",
+      "contributions": 143,
+      "privateContributions": 86
+    },
+    {
+      "month": "2023-07",
+      "contributions": 7,
+      "privateContributions": 1
+    },
+    {
+      "month": "2023-08",
+      "contributions": 7,
+      "privateContributions": 2
+    },
+    {
+      "month": "2023-09",
+      "contributions": 10,
+      "privateContributions": 2
+    },
+    {
+      "month": "2023-10",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2023-11",
+      "contributions": 29,
+      "privateContributions": 14
+    },
+    {
+      "month": "2023-12",
+      "contributions": 27,
+      "privateContributions": 6
+    },
+    {
+      "month": "2024-01",
+      "contributions": 66,
+      "privateContributions": 26
+    },
+    {
+      "month": "2024-02",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2024-03",
+      "contributions": 25,
+      "privateContributions": 5
+    },
+    {
+      "month": "2024-04",
+      "contributions": 43,
+      "privateContributions": 19
+    },
+    {
+      "month": "2024-05",
+      "contributions": 16,
+      "privateContributions": 8
+    },
+    {
+      "month": "2024-06",
+      "contributions": 91,
+      "privateContributions": 56
+    },
+    {
+      "month": "2024-07",
+      "contributions": 18,
+      "privateContributions": 7
+    },
+    {
+      "month": "2024-08",
+      "contributions": 13,
+      "privateContributions": 5
+    },
+    {
+      "month": "2024-09",
+      "contributions": 57,
+      "privateContributions": 23
+    },
+    {
+      "month": "2024-10",
+      "contributions": 36,
+      "privateContributions": 24
+    },
+    {
+      "month": "2024-11",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2024-12",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2025-01",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2025-02",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2025-03",
+      "contributions": 78,
+      "privateContributions": 32
+    },
+    {
+      "month": "2025-04",
+      "contributions": 97,
+      "privateContributions": 50
+    },
+    {
+      "month": "2025-05",
+      "contributions": 35,
+      "privateContributions": 8
+    },
+    {
+      "month": "2025-06",
+      "contributions": 4,
+      "privateContributions": 1
+    },
+    {
+      "month": "2025-07",
+      "contributions": 45,
+      "privateContributions": 17
+    },
+    {
+      "month": "2025-08",
+      "contributions": 78,
+      "privateContributions": 16
+    },
+    {
+      "month": "2025-09",
+      "contributions": 44,
+      "privateContributions": 22
+    },
+    {
+      "month": "2025-10",
+      "contributions": 3,
+      "privateContributions": 0
+    },
+    {
+      "month": "2025-11",
+      "contributions": 144,
+      "privateContributions": 44
+    },
+    {
+      "month": "2025-12",
+      "contributions": 142,
+      "privateContributions": 73
+    },
+    {
+      "month": "2026-01",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2026-02",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2026-03",
+      "contributions": 192,
+      "privateContributions": 115
+    },
+    {
+      "month": "2026-04",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2026-05",
+      "contributions": 86,
+      "privateContributions": 47
+    },
+    {
+      "month": "2026-06",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2026-07",
+      "contributions": 0,
+      "privateContributions": 0
+    },
+    {
+      "month": "2026-08",
+      "contributions": 3,
+      "privateContributions": 1
+    },
+    {
+      "month": "2026-09",
+      "contributions": 7,
+      "privateContributions": 2
+    }
+  ]
+}

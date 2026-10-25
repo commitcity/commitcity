@@ -14,7 +14,9 @@ import {
   designOf,
   familyFromLanguage,
   modelOf,
+  footprintFromCommits,
   footprintFromStars,
+  wingsFromCommits,
   levelFromCommits,
 } from "./buildings";
 
@@ -36,6 +38,19 @@ describe("mapping thresholds", () => {
     expect([0, 9, 10, 99, 100, 999, 1000, 98_000].map(footprintFromStars)).toEqual([
       1, 1, 2, 2, 3, 3, 4, 4,
     ]);
+  });
+
+  it("maps commits to footprints, with unknown counts at 1 × 1", () => {
+    expect([null, 0, 99, 100, 399, 400, 2999, 3000].map(footprintFromCommits)).toEqual([
+      1, 1, 1, 2, 2, 3, 3, 4,
+    ]);
+  });
+
+  it("grows a wing per 300 commits, at most three, and none for a fork", () => {
+    expect([null, 299, 300, 899, 900, 50_000].map((c) => wingsFromCommits(c, false))).toEqual([
+      0, 0, 1, 2, 3, 3,
+    ]);
+    expect(wingsFromCommits(50_000, true)).toBe(0);
   });
 
   it("maps commits to levels, with unknown counts at level 1", () => {
@@ -97,6 +112,16 @@ describe("buildingTraits", () => {
   it("turns forks into annexes one size smaller", () => {
     expect(traits({ isFork: true, stars: 150 })).toMatchObject({ isAnnex: true, footprint: 2 });
     expect(traits({ isFork: true, stars: 0 })).toMatchObject({ isAnnex: true, footprint: 1 });
+  });
+
+  it("sizes a building by its stars or its commits, whichever is bigger", () => {
+    expect(traits({ stars: 0, commitCount: 450 }).footprint).toBe(3);
+    expect(traits({ stars: 150, commitCount: 5 }).footprint).toBe(3);
+    expect(traits({ stars: 0, commitCount: 20 }).footprint).toBe(1);
+  });
+
+  it("ignores a fork's commits, which are mostly its upstream's", () => {
+    expect(traits({ isFork: true, stars: 0, commitCount: 50_000 }).footprint).toBe(1);
   });
 
   it("marks archived repositories as abandoned", () => {

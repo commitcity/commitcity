@@ -1,12 +1,16 @@
-import type { CityInput } from "@/core/model";
+import type { CityInput, MonthInput } from "@/core/model";
 import { normalizeOwner } from "./normalize";
 import {
+  ACTIVITY_YEARS_QUERY,
+  type ActivityYearResponse,
+  type ActivityYearsResponse,
   GITHUB_GRAPHQL_URL,
   OWNER_REPOSITORIES_QUERY,
   type OwnerPage,
   type OwnerResponse,
   PAGE_SIZE,
   type RepoNode,
+  activityYearQuery,
 } from "./query";
 
 /** Why a lookup produced no city. Every failure is one of these; nothing throws. */
@@ -33,7 +37,15 @@ export interface FetchOptions {
    * (ARCHITECTURE.md §6.7); this only bounds the API cost of one lookup.
    */
   maxRepos?: number;
+  /**
+   * Also fetch the monthly contribution calendar (one request per year, plus
+   * one), so every month with contributions becomes a house. Off by default.
+   */
+  activity?: boolean;
 }
+
+/** Contribution years fetched at most, the most recent ones. */
+export const MAX_ACTIVITY_YEARS = 10;
 
 export const MAX_REPOS = 1000;
 
@@ -67,10 +79,70 @@ export async function fetchCityInput(login: string, options: FetchOptions): Prom
     after = pageInfo.hasNextPage ? pageInfo.endCursor : null;
   } while (after !== null && nodes.length < maxRepos);
 
+  // The calendar is a bonus: if it cannot be read, the city is built from
+  // repositories alone.
+  const activity = options.activity ? await fetchActivity(login, options, now()) : null;
+
   try {
-    return { ok: true, input: normalizeOwner(owner ?? login, nodes.slice(0, maxRepos), now()) };
+    const input = normalizeOwner(owner ?? login, nodes.slice(0, maxRepos), now(), activity);
+    return { ok: true, input };
   } catch (error) {
     return failure({ kind: "unavailable", detail: `unexpected data: ${message(error)}` });
+  }
+}
+
+/**
+ * Contributions per month for a user, oldest first, or null when they are not
+ * available (an organization, an error, a rate limit). Never fails the lookup.
+ */
+async function fetchActivity(
+  login: string,
+  options: FetchOptions,
+  until: Date,
+): Promise<MonthInput[] | null> {
+  const years = await graphql<ActivityYearsResponse>(ACTIVITY_YEARS_QUERY, login, options);
+  const list = years?.data?.user?.contributionsCollection.contributionYears;
+  if (!list) return null;
+  const recent = [...list].sort((a, b) => b - a).slice(0, MAX_ACTIVITY_YEARS);
+  const months: MonthInput[] = [];
+  for (const year of recent.reverse()) {
+    const body = await graphql<ActivityYearResponse>(
+      activityYearQuery(year, until),
+      login,
+      options,
+    );
+    const user = body?.data?.user;
+    if (!user) return null;
+    for (let m = 1; m <= 12; m++) {
+      const node = user[`m${String(m).padStart(2, "0")}`];
+      if (!node) continue;
+      const total = node.contributionCalendar.totalContributions;
+      months.push({
+        month: `${year}-${String(m).padStart(2, "0")}`,
+        contributions: total,
+        privateContributions: Math.min(total, node.restrictedContributionsCount),
+      });
+    }
+  }
+  return months;
+}
+
+/** One GraphQL request; null on any failure. */
+async function graphql<T>(query: string, login: string, options: FetchOptions): Promise<T | null> {
+  try {
+    const response = await (options.fetch ?? fetch)(options.endpoint ?? GITHUB_GRAPHQL_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${options.token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "commitcity",
+      },
+      body: JSON.stringify({ query, variables: { login } }),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
   }
 }
 

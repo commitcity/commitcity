@@ -24,7 +24,11 @@ export interface CityModel {
   aggregates: Aggregate[];
 }
 
+/** `repoId` of a house of the contribution calendar: "month:" and the month. */
+export const MONTH_PREFIX = "month:";
+
 export interface Building {
+  /** The repository it stands for, or `month:YYYY-MM` for a house of the contribution calendar. */
   repoId: string;
   manifestId: string;
   /** Back (top) corner of the footprint. */
@@ -36,6 +40,12 @@ export interface Building {
   level: number;
   variant: Variant;
   isAnnex: boolean;
+  /**
+   * 1, 2 or 3 for the extra wings a busy repository grows beside its main
+   * building (ARCHITECTURE.md §6.5); absent for the main building. Every wing
+   * shows the same repository.
+   */
+  wing?: number;
 }
 
 /** Road shapes are not stored; the view layer derives them from neighbors. */
@@ -44,7 +54,7 @@ export interface RoadTile {
   y: number;
 }
 
-export type GroundKind = "grass" | "dirt" | "pavement" | "water";
+export type GroundKind = "grass" | "meadow" | "forest" | "dirt" | "pavement" | "water";
 
 export interface GroundTile {
   x: number;

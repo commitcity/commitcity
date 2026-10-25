@@ -59,6 +59,8 @@ const FAMILY_SCHEMES: Record<Family, Scheme> = {
 
 const GROUND: Record<string, Rgb> = {
   grass: [86, 140, 72],
+  meadow: [106, 160, 80],
+  forest: [62, 112, 60],
   dirt: [140, 110, 74],
   pavement: [150, 150, 146],
   water: [70, 120, 190],
@@ -272,7 +274,8 @@ export class CityPlaceholders {
     };
 
     switch (kind) {
-      case "tree": {
+      case "tree":
+      case "blossom": {
         const r = (4 + (variant % 3)) * u;
         trunk(6 * u, [96, 66, 44]);
         disc(cx, groundY - 6 * u - r + u, r, [56, 118, 58], [86, 150, 70]);

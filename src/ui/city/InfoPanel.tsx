@@ -1,4 +1,4 @@
-import type { RepoInput } from "@/core/model";
+import type { MonthInput, RepoInput } from "@/core/model";
 
 const dateFormat = new Intl.DateTimeFormat("en", {
   year: "numeric",
@@ -63,6 +63,55 @@ export function InfoPanel({
       >
         Open on GitHub
       </a>
+    </aside>
+  );
+}
+
+const monthFormat = new Intl.DateTimeFormat("en", {
+  year: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
+/** "March 2024" for "2024-03". */
+export const monthName = (month: string) => monthFormat.format(new Date(`${month}-01T00:00:00Z`));
+
+/** One line for a house of the contribution calendar, for the hover tip. */
+export function monthSummary(m: MonthInput): string {
+  const n = m.contributions.toLocaleString("en");
+  return `${monthName(m.month)}: ${n} ${m.contributions === 1 ? "contribution" : "contributions"}`;
+}
+
+/** The record card of a house: one month of the owner's contributions. */
+export function MonthPanel({ month, onClose }: { month: MonthInput; onClose: () => void }) {
+  return (
+    <aside
+      className="city-card ui-parchment"
+      aria-label="Selected month"
+      aria-live="polite"
+      data-testid="info-panel"
+    >
+      <header className="city-card-head">
+        <h2>{monthName(month.month)}</h2>
+        <button
+          type="button"
+          className="ui-button ui-button--icon"
+          onClick={onClose}
+          aria-label="Close (Escape)"
+          data-cuelume-close
+        >
+          <span className="ui-icon ui-icon--close" aria-hidden="true" />
+        </button>
+      </header>
+      <p className="city-card-description">
+        A house of the contribution calendar: every month with contributions is one.
+      </p>
+      <dl>
+        <dt>Contributions</dt>
+        <dd>{month.contributions.toLocaleString("en")}</dd>
+        <dt>In private repositories</dt>
+        <dd>{month.privateContributions.toLocaleString("en")}</dd>
+      </dl>
     </aside>
   );
 }

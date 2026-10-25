@@ -3,9 +3,10 @@ import edgeCases from "../../../fixtures/edge-cases.json";
 import large from "../../../fixtures/large.json";
 import medium from "../../../fixtures/medium.json";
 import tiny from "../../../fixtures/tiny.json";
+import typical from "../../../fixtures/typical.json";
 import { CityInputError, type RepoInput, parseCityInput } from "./input";
 
-const FIXTURES = { tiny, medium, large, "edge-cases": edgeCases };
+const FIXTURES = { tiny, typical, medium, large, "edge-cases": edgeCases };
 
 function validRepo(overrides: Partial<Record<keyof RepoInput, unknown>> = {}) {
   return {
@@ -112,5 +113,31 @@ describe("parseCityInput", () => {
     expect(() => parseCityInput(city([validRepo({ stars: -1 })]))).toThrow(
       "$.repos[0].stars: expected a non-negative integer",
     );
+  });
+
+  it("accepts a monthly contribution calendar", () => {
+    const month = { month: "2024-03", contributions: 87, privateContributions: 40 };
+    expect(parseCityInput({ ...city([]), activity: [month] }).activity).toEqual([month]);
+  });
+
+  it.each([
+    ["a malformed month", { month: "2024-13", contributions: 1, privateContributions: 0 }, "month"],
+    [
+      "a negative count",
+      { month: "2024-03", contributions: -1, privateContributions: 0 },
+      "contributions",
+    ],
+    [
+      "more private than all contributions",
+      { month: "2024-03", contributions: 1, privateContributions: 2 },
+      "privateContributions",
+    ],
+  ])("rejects a month with %s", (_, month, field) => {
+    expect(errorPath({ ...city([]), activity: [month] })).toBe(`$.activity[0].${field}`);
+  });
+
+  it("rejects a month given twice", () => {
+    const month = { month: "2024-03", contributions: 1, privateContributions: 0 };
+    expect(errorPath({ ...city([]), activity: [month, month] })).toBe("$.activity[1].month");
   });
 });

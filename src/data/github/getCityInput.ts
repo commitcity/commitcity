@@ -28,6 +28,7 @@ async function lookup(login: string): Promise<GitHubResult> {
   const result = await fetchCityInput(login, {
     token: process.env.GITHUB_TOKEN,
     endpoint: process.env.GITHUB_GRAPHQL_URL || undefined,
+    activity: true,
   });
   // Errors are returned, not thrown: production builds hide thrown messages.
   if (result.ok) cacheLife("days");

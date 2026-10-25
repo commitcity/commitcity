@@ -20,6 +20,8 @@ import {
   type Hit,
   type Material,
   type Part,
+  type Solid,
+  type Vec,
   box,
   cylinder,
   dome,
@@ -60,6 +62,7 @@ const RUST = ramp("4c3e24", "6e2727", "9e4539", "cd683d", "e6904e");
 const GLASS = ramp(...RAMPS.glass);
 const GOLD = ramp("9e4539", "f79617", "f9c22b", "fbff86");
 const HEDGE = ramp(...RAMPS.foliage);
+const ROOF_GARDEN = ramp("165a4c", "165a4c", "239063", "1ebc73");
 const WATER = ramp("323353", "4d65b4", "4d9be6", "8fd3ff");
 
 // Facade details ----------------------------------------------------------------
@@ -1575,6 +1578,472 @@ function blackTower(tiles: number) {
   };
 }
 
+/**
+ * A setback skyscraper: three glass tiers, each narrower than the one below,
+ * with stone bands between them and a pyramid crown under a spire.
+ */
+function setbackTower(tiles: number) {
+  return (ctx: Ctx): Part[] => {
+    const S = tiles * T;
+    const g = GLASSES[ctx.scheme]!;
+    const h = 70 + ctx.level * 24 + tiles * 10;
+    const steps = [3, 3 + tiles * 2, 3 + tiles * 4];
+    const tops = [Math.round(h * 0.45), Math.round(h * 0.75), h];
+    const parts: Part[] = [];
+    let z = 0;
+    steps.forEach((m, i) => {
+      parts.push({
+        solid: box(m, m, z, S - m, S - m, tops[i]!),
+        material: g,
+        detail: curtain(ctx, g, 5, 3, z),
+      });
+      parts.push({
+        solid: box(m - 1, m - 1, tops[i]!, S - m + 1, S - m + 1, tops[i]! + 2),
+        material: STONE,
+      });
+      z = tops[i]! + 2;
+    });
+    const m = steps[2]! + 2;
+    parts.push({ solid: pyramid(m, m, S - m, S - m, z, 10 + tiles * 2), material: METAL });
+    parts.push({ solid: cylinder(S / 2, S / 2, 0.6, z + 8, z + 30), material: METAL });
+    return parts;
+  };
+}
+
+/**
+ * Two slim towers of different heights on a shared stone podium, at the left and
+ * right corners so both read side by side on screen.
+ */
+function twinTowers(tiles: number) {
+  return (ctx: Ctx): Part[] => {
+    const S = tiles * T;
+    const g = GLASSES[ctx.scheme]!;
+    const h = 60 + ctx.level * 22 + tiles * 10;
+    const low = Math.round(h * 0.8);
+    const w = tiles * 5;
+    const podium = 10;
+    return [
+      {
+        solid: box(2, 2, 0, S - 2, S - 2, podium),
+        material: STONE,
+        detail: curtain(ctx, GLASSES.silver!, 5, 4),
+      },
+      // Left on screen: low u, high v. Right on screen: high u, low v.
+      {
+        solid: box(4, S - 4 - w, podium, 4 + w, S - 4, h),
+        material: g,
+        detail: curtain(ctx, g, 4, 3, podium),
+      },
+      { solid: box(5, S - 3 - w, h, 3 + w, S - 5, h + 4), material: METAL },
+      { solid: cylinder(4 + w / 2, S - 4 - w / 2, 0.6, h + 4, h + 18), material: METAL },
+      {
+        solid: box(S - 4 - w, 4, podium, S - 4, 4 + w, low),
+        material: g,
+        detail: curtain(ctx, g, 4, 3, podium),
+      },
+      { solid: box(S - 3 - w, 5, low, S - 5, 3 + w, low + 4), material: METAL },
+    ];
+  };
+}
+
+/** A stone office tower with punched windows and a stepped copper crown. */
+function crownTower(tiles: number) {
+  return (ctx: Ctx): Part[] => {
+    const S = tiles * T;
+    const [w, roof] = pair(ctx.scheme);
+    const walls = WALLS[w]!;
+    const crown =
+      roof === "gold" ? ramp("45293f", "6e2727", "9e4539", "cd683d") : ramp(...RAMPS.teal);
+    const h = 50 + ctx.level * 22 + tiles * 10;
+    const m = 4;
+    return [
+      { solid: box(2, 2, 0, S - 2, S - 2, 6), material: STONE },
+      {
+        solid: box(m, m, 6, S - m, S - m, h),
+        material: walls,
+        detail: all(
+          bands(12, { left: walls.ramp[3]!, right: walls.ramp[1]! }, 6),
+          boxWindows({
+            seed: ctx.seed,
+            abandoned: ctx.abandoned,
+            period: 4,
+            width: 2,
+            storey: 6,
+            sill: 2,
+            height: 3,
+            from: 8,
+            to: h - 2,
+            margin: 2,
+            u0: m,
+            u1: S - m,
+            v0: m,
+            v1: S - m,
+            glass: glassOf("dark"),
+            lit: 0.35,
+          }),
+        ),
+      },
+      { solid: box(m + 1, m + 1, h, S - m - 1, S - m - 1, h + 2), material: STONE },
+      { solid: box(m + 3, m + 3, h + 2, S - m - 3, S - m - 3, h + 5), material: walls },
+      {
+        solid: pyramid(m + 3, m + 3, S - m - 3, S - m - 3, h + 5, 12 + tiles * 4),
+        material: crown,
+      },
+      { solid: cylinder(S / 2, S / 2, 0.6, h + 12, h + 30 + tiles * 3), material: METAL },
+    ];
+  };
+}
+
+/** A needle-thin glass tower with a long mast and a red beacon. */
+function needle(ctx: Ctx): Part[] {
+  const S = 2 * T;
+  const g = GLASSES[ctx.scheme]!;
+  const h = 90 + ctx.level * 26;
+  return [
+    {
+      solid: box(3, 3, 0, S - 3, S - 3, 6),
+      material: STONE,
+      detail: curtain(ctx, GLASSES.silver!, 6, 4),
+    },
+    { solid: box(9, 9, 6, S - 9, S - 9, h), material: g, detail: curtain(ctx, g, 4, 2, 6) },
+    { solid: box(10, 10, h, S - 10, S - 10, h + 6), material: METAL },
+    { solid: cylinder(S / 2, S / 2, 0.6, h + 6, h + 34), material: METAL },
+    { solid: box(S / 2 - 1, S / 2 - 1, h + 34, S / 2 + 1, S / 2 + 1, h + 36), material: ROOF.red! },
+  ];
+}
+
+/** A wide podium with a roof garden and a slim tower set back at the rear corner. */
+function podiumTower(tiles: number) {
+  return (ctx: Ctx): Part[] => {
+    const S = tiles * T;
+    const [w, gName] = pair(ctx.scheme);
+    const walls = WALLS[w]!;
+    const g = GLASSES[gName]!;
+    const h = 60 + ctx.level * 24 + tiles * 10;
+    const podium = 14;
+    const t = Math.round(S * 0.55);
+    return [
+      {
+        solid: box(2, 2, 0, S - 2, S - 2, podium),
+        material: walls,
+        detail: boxWindows({
+          seed: ctx.seed,
+          abandoned: ctx.abandoned,
+          period: 6,
+          width: 4,
+          storey: 7,
+          sill: 1,
+          height: 4,
+          from: 1,
+          to: podium - 1,
+          margin: 3,
+          u0: 2,
+          u1: S - 2,
+          v0: 2,
+          v1: S - 2,
+          glass: glassOf("sky"),
+          lit: 0.2,
+        }),
+      },
+      { solid: box(3, 3, podium, S - 3, S - 3, podium + 1), material: ROOF_GARDEN },
+      {
+        solid: box(4, 4, podium, 4 + t, 4 + t, h),
+        material: g,
+        detail: curtain(ctx, g, 5, 3, podium),
+      },
+      { solid: box(6, 6, h, 2 + t, 2 + t, h + 3), material: walls },
+      { solid: box(10, 10, h + 3, t - 2, t - 2, h + 8), material: METAL },
+    ];
+  };
+}
+
+/** The convex solid cut by the half-space n·p ≤ d. */
+const cut = (solid: Solid, n: Vec, d: number): Solid =>
+  solid.kind === "convex" ? { kind: "convex", planes: [...solid.planes, { n, d }] } : solid;
+
+const BARK = ramp("2e222f", "45293f", "694f62", "966c6c");
+const DECK = ramp("165a4c", "165a4c", "239063", "239063");
+const PALM = ramp("165a4c", "239063", "1ebc73", "91db69");
+
+/**
+ * A rounded arch over the box (u0, v0)–(u1, v1) from z0, rising `rise` in the
+ * middle of u: a convex polygon of steep sides and a flatter top.
+ */
+function arch(u0: number, v0: number, u1: number, v1: number, z0: number, rise: number): Solid {
+  let solid = box(u0, v0, z0 - 1, u1, v1, z0 + rise);
+  const half = (u1 - u0) / 2;
+  const mid = u0 + half;
+  // z − z0 ≤ rise · (1 − k|u − mid|/half) for a few slopes, with the top at `rise`.
+  for (const [k, lift] of [
+    [0.35, 0],
+    [1, 0.3],
+    [3, 2],
+  ] as const) {
+    const a = (rise * k) / half;
+    const top = z0 + rise * (1 + lift);
+    solid = cut(solid, [a, 0, 1], top + a * mid);
+    solid = cut(solid, [-a, 0, 1], top - a * mid);
+  }
+  return solid;
+}
+
+/** A palm on a roof or a plaza: a thin trunk under a small round crown. */
+const palm = (u: number, v: number, z: number, h: number): Part[] => [
+  { solid: cylinder(u, v, 0.7, z, z + h), material: BARK },
+  { solid: dome(u, v, z + h, 3), material: PALM },
+];
+
+/**
+ * A sail tower: a slim glass shaft framed by white fins, crowned by a glass arch
+ * with a taller white crest behind it, on a podium with a pool and palms.
+ */
+function sailTower(tiles: number) {
+  return (ctx: Ctx): Part[] => {
+    const S = tiles * T;
+    const g = GLASSES[ctx.scheme]!;
+    const h = 80 + ctx.level * 26 + tiles * 10;
+    const m = tiles * 3 + 2;
+    const podium = 6;
+    const fin = WALLS.white!;
+    return [
+      {
+        solid: box(2, 2, 0, S - 2, S - 2, podium),
+        material: STONE,
+        detail: curtain(ctx, GLASSES.silver!, 6, 4),
+      },
+      { solid: box(3, 3, podium, S - 3, S - 3, podium + 1), material: STONE },
+      { solid: box(S - m + 2, S - m + 2, podium, S - 4, S - 4, podium + 1), material: WATER },
+      ...palm(S - 6, m - 1, podium + 1, 8),
+      ...palm(m - 1, S - 6, podium + 1, 10),
+      {
+        solid: box(m, m, podium, S - m, S - m, h),
+        material: g,
+        detail: curtain(ctx, g, 4, 3, podium),
+      },
+      // White fins up the corners of both visible walls.
+      { solid: box(m - 1, S - m - 1, podium, m + 1, S - m + 1, h), material: fin },
+      { solid: box(S - m - 1, S - m - 1, podium, S - m + 1, S - m + 1, h + 2), material: fin },
+      { solid: box(S - m - 1, m - 1, podium, S - m + 1, m + 1, h), material: fin },
+      // A white crest behind, then a rounded glass arch in front of it.
+      { solid: arch(m, m, S - m, m + 3, h, 20 + tiles * 4), material: fin },
+      {
+        solid: arch(m + 1, m + 3, S - m - 1, S - m, h, 12 + tiles * 3),
+        material: g,
+        detail: curtain(ctx, g, 4, 3, h),
+      },
+      {
+        solid: cylinder(S / 2, m + 1, 0.6, h + 16 + tiles * 4, h + 30 + tiles * 4),
+        material: METAL,
+      },
+    ];
+  };
+}
+
+/**
+ * A dark glass shaft held by four stone piers that rise past the roof, with a
+ * sky terrace half way up and a roof garden between the piers.
+ */
+function pierTower(tiles: number) {
+  return (ctx: Ctx): Part[] => {
+    const S = tiles * T;
+    const [w, gName] = pair(ctx.scheme);
+    const stone = WALLS[w]!;
+    const g = GLASSES[gName]!;
+    const h = 70 + ctx.level * 26 + tiles * 10;
+    const m = 4;
+    const p = tiles * 2 + 3;
+    const terrace = Math.round(h * 0.55);
+    const piers = [
+      [m, m, 4],
+      [S - m - p, m, 0],
+      [m, S - m - p, 0],
+      [S - m - p, S - m - p, 10],
+    ] as const;
+    const parts: Part[] = [
+      { solid: box(2, 2, 0, S - 2, S - 2, 4), material: STONE },
+      {
+        solid: box(m + 2, m + 2, 4, S - m - 2, S - m - 2, h),
+        material: g,
+        detail: curtain(ctx, g, 4, 3, 4),
+      },
+      { solid: box(m + 1, m + 1, terrace, S - m - 1, S - m - 1, terrace + 3), material: stone },
+      { solid: box(m + 2, m + 2, h, S - m - 2, S - m - 2, h + 2), material: DECK },
+    ];
+    for (const [u, v, extra] of piers)
+      parts.push({
+        solid: box(u, v, 0, u + p, v + p, h + 6 + extra),
+        material: stone,
+        detail: bands(6, { left: stone.ramp[2]!, right: stone.ramp[1]! }),
+      });
+    parts.push({
+      solid: box(S / 2 - 3, S / 2 - 3, h + 2, S / 2 + 3, S / 2 + 3, h + 8),
+      material: METAL,
+    });
+    return parts;
+  };
+}
+
+/**
+ * A tall apartment slab: a long, narrow block of small windows with darker
+ * stair cores, a dark ground floor and a machine room on the roof. On three
+ * tiles a second, shorter slab stands in front.
+ */
+function aptSlab(tiles: number) {
+  return (ctx: Ctx): Part[] => {
+    const S = tiles * T;
+    const walls = WALLS[ctx.scheme]!;
+    const storey = 5;
+    const slab = (
+      u0: number,
+      v0: number,
+      u1: number,
+      v1: number,
+      floors: number,
+      key: string,
+    ): Part[] => {
+      const h = 6 + floors * storey;
+      const cores = (hit: Hit) => {
+        const spot = wallSpot(hit);
+        if (!spot || spot.z < 6) return null;
+        const len = spot.side === "left" ? u1 - u0 : v1 - v0;
+        const s = spot.s - (spot.side === "left" ? u0 : v0);
+        // A recessed stair core every 14 units on the long wall.
+        return len > 20 && Math.floor(s) % 14 === 7
+          ? walls.ramp[spot.side === "left" ? 1 : 0]!
+          : null;
+      };
+      return [
+        {
+          solid: box(u0, v0, 0, u1, v1, 6),
+          material: STONE,
+          detail: curtain(ctx, GLASSES.dark!, 6, 4),
+        },
+        {
+          solid: box(u0, v0, 6, u1, v1, h),
+          material: walls,
+          detail: all(
+            cores,
+            boxWindows({
+              seed: ctx.seed + key,
+              abandoned: ctx.abandoned,
+              period: 4,
+              width: 2,
+              storey,
+              sill: 2,
+              height: 2,
+              from: 6,
+              to: h - 1,
+              margin: 2,
+              u0,
+              u1,
+              v0,
+              v1,
+              glass: glassOf("sky"),
+              lit: 0.12,
+            }),
+          ),
+        },
+        { solid: box(u0, v0, h, u1, v1, h + 1), material: walls },
+        { solid: box(u0 + 3, v0 + 2, h + 1, u0 + 11, v1 - 2, h + 7), material: walls },
+        { solid: box(u1 - 8, v0 + 3, h + 1, u1 - 4, v1 - 3, h + 3), material: METAL },
+      ];
+    };
+    const floors = 10 + ctx.level * 4 + tiles * 2;
+    if (tiles === 2) return slab(3, 9, S - 3, S - 6, floors, "a");
+    return [
+      ...slab(3, 4, S - 3, 16, floors, "a"),
+      ...slab(3, S - 18, S - 18, S - 6, Math.round(floors * 0.7), "b"),
+    ];
+  };
+}
+
+/**
+ * A low office or school block: two wings in an L around a glass atrium with a
+ * glass roof, and a lawn with trees in the open front corner.
+ */
+function atriumBlock(tiles: number) {
+  return (ctx: Ctx): Part[] => {
+    const S = tiles * T;
+    const [w, gName] = pair(ctx.scheme);
+    const walls = WALLS[w]!;
+    const g = GLASSES[gName]!;
+    const h = 16 + ctx.level * 6;
+    const d = 12 + tiles * 2;
+    const win = (u0: number, v0: number, u1: number, v1: number, key: string) =>
+      all(
+        bands(6, { left: walls.ramp[3]!, right: walls.ramp[1]! }),
+        boxWindows({
+          seed: ctx.seed + key,
+          abandoned: ctx.abandoned,
+          period: 5,
+          width: 3,
+          storey: 6,
+          sill: 2,
+          height: 3,
+          from: 1,
+          to: h - 1,
+          margin: 2,
+          u0,
+          u1,
+          v0,
+          v1,
+          glass: glassOf(gName),
+          lit: 0.15,
+        }),
+      );
+    const a = d + 1;
+    const parts: Part[] = [
+      // Left on screen: the wing along v; right on screen: the wing along u.
+      { solid: box(2, 2, 0, d, S - 2, h), material: walls, detail: win(2, 2, d, S - 2, "a") },
+      { solid: box(d, 2, 0, S - 2, d, h - 6), material: walls, detail: win(d, 2, S - 2, d, "b") },
+      { solid: box(1, 1, h, d + 1, S - 1, h + 1), material: walls },
+      { solid: box(d, 1, h - 6, S - 1, d + 1, h - 5), material: walls },
+      { solid: box(d, d, 0, a + 12, a + 12, h - 2), material: g, detail: curtain(ctx, g, 6, 3) },
+      { solid: pyramid(d, d, a + 12, a + 12, h - 2, 6), material: g },
+      { solid: box(5, 6, h + 1, 9, 12, h + 4), material: METAL },
+      { solid: box(S - 12, 5, h - 5, S - 6, 9, h - 2), material: METAL },
+      { solid: box(a + 13, a + 13, 0, S - 3, S - 3, 1), material: DECK, flat: true },
+      ...palm(S - 8, a + 17, 1, 5),
+      ...palm(a + 17, S - 8, 1, 5),
+    ];
+    return parts;
+  };
+}
+
+/** Three rounded residential towers of different heights on a garden podium. */
+function trioTowers(ctx: Ctx): Part[] {
+  const S = 4 * T;
+  const g = GLASSES[ctx.scheme]!;
+  const h = 80 + ctx.level * 26;
+  const podium = 10;
+  const r = 9;
+  const tower = (u: number, v: number, top: number): Part[] => [
+    { solid: cylinder(u, v, r, podium, top), material: g, detail: curtain(ctx, g, 4, 3, podium) },
+    {
+      solid: box(u - r, v - r, podium, u, v, top),
+      material: g,
+      detail: curtain(ctx, g, 4, 3, podium),
+    },
+    { solid: cylinder(u, v, r + 0.5, top, top + 2), material: WALLS.white! },
+    { solid: cylinder(u - 2, v - 2, r - 4, top + 2, top + 7), material: WALLS.white! },
+  ];
+  return [
+    {
+      solid: box(2, 2, 0, S - 2, S - 2, podium),
+      material: STONE,
+      detail: curtain(ctx, GLASSES.silver!, 5, 4),
+    },
+    { solid: box(3, 3, podium, S - 3, S - 3, podium + 1), material: DECK },
+    { solid: box(34, 40, podium, 46, 52, podium + 1), material: WATER },
+    ...tower(14, 14, h),
+    ...tower(14, 40, Math.round(h * 0.78)),
+    ...tower(40, 14, Math.round(h * 0.88)),
+    ...palm(30, 50, podium + 1, 6),
+    ...palm(50, 30, podium + 1, 7),
+    ...palm(52, 48, podium + 1, 5),
+  ];
+}
+
 /** A low shopping mall with a coloured sign band and a car park. */
 function mall(ctx: Ctx): Part[] {
   const S = 3 * T;
@@ -2323,6 +2792,24 @@ const MODELS: Model[] = [
     parts: apartments(3),
   },
   {
+    name: "slab",
+    family: "residential",
+    footprint: 2,
+    levels: [2, 3],
+    lot: "paved",
+    schemes: ["white", "sand", "peach"],
+    parts: aptSlab(2),
+  },
+  {
+    name: "slab-large",
+    family: "residential",
+    footprint: 3,
+    levels: [1, 2, 3],
+    lot: "paved",
+    schemes: ["white", "sand", "sage"],
+    parts: aptSlab(3),
+  },
+  {
     name: "towers",
     family: "residential",
     footprint: 4,
@@ -2615,6 +3102,150 @@ const MODELS: Model[] = [
     lot: "plaza",
     schemes: ["dark", "blue", "sage"],
     parts: blackTower(4),
+  },
+  {
+    name: "modern-setback",
+    family: "modern",
+    footprint: 3,
+    levels: [2, 3],
+    lot: "plaza",
+    schemes: ["sky", "bronze", "sage"],
+    parts: setbackTower(3),
+  },
+  {
+    name: "modern-setback-large",
+    family: "modern",
+    footprint: 4,
+    levels: [1, 2, 3],
+    lot: "plaza",
+    schemes: ["silver", "blue"],
+    parts: setbackTower(4),
+  },
+  {
+    name: "modern-twin",
+    family: "modern",
+    footprint: 3,
+    levels: [1, 2, 3],
+    lot: "plaza",
+    schemes: ["blue", "bronze"],
+    parts: twinTowers(3),
+  },
+  {
+    name: "modern-twin-large",
+    family: "modern",
+    footprint: 4,
+    levels: [1, 2, 3],
+    lot: "plaza",
+    schemes: ["sky", "dark"],
+    parts: twinTowers(4),
+  },
+  {
+    name: "modern-crown",
+    family: "modern",
+    footprint: 2,
+    levels: [2, 3],
+    lot: "paved",
+    schemes: ["stone/teal", "sand/gold"],
+    parts: crownTower(2),
+  },
+  {
+    name: "modern-crown-large",
+    family: "modern",
+    footprint: 3,
+    levels: [1, 2, 3],
+    lot: "paved",
+    schemes: ["white/teal", "brownbrick/gold", "charcoal/gold"],
+    parts: crownTower(3),
+  },
+  {
+    name: "modern-needle",
+    family: "modern",
+    footprint: 2,
+    levels: [2, 3],
+    lot: "plaza",
+    schemes: ["silver", "sage"],
+    parts: needle,
+  },
+  {
+    name: "modern-podium",
+    family: "modern",
+    footprint: 3,
+    levels: [1, 2, 3],
+    lot: "paved",
+    schemes: ["sand/blue", "white/dark"],
+    parts: podiumTower(3),
+  },
+  {
+    name: "modern-podium-large",
+    family: "modern",
+    footprint: 4,
+    levels: [1, 2, 3],
+    lot: "paved",
+    schemes: ["stone/sky", "peach/bronze"],
+    parts: podiumTower(4),
+  },
+  {
+    name: "modern-sail",
+    family: "modern",
+    footprint: 2,
+    levels: [2, 3],
+    lot: "plaza",
+    schemes: ["blue", "sky"],
+    parts: sailTower(2),
+  },
+  {
+    name: "modern-sail-large",
+    family: "modern",
+    footprint: 3,
+    levels: [1, 2, 3],
+    lot: "plaza",
+    schemes: ["blue", "silver"],
+    parts: sailTower(3),
+  },
+  {
+    name: "modern-piers",
+    family: "modern",
+    footprint: 2,
+    levels: [2, 3],
+    lot: "paved",
+    schemes: ["sand/dark", "white/blue"],
+    parts: pierTower(2),
+  },
+  {
+    name: "modern-piers-large",
+    family: "modern",
+    footprint: 3,
+    levels: [1, 2, 3],
+    lot: "paved",
+    schemes: ["sand/dark", "stone/sage", "white/bronze"],
+    parts: pierTower(3),
+  },
+  {
+    name: "modern-atrium",
+    family: "modern",
+    footprint: 3,
+    levels: [1, 2],
+    lot: "paved",
+    schemes: ["white/sky", "sand/blue", "redbrick/silver"],
+    parts: atriumBlock(3),
+  },
+  {
+    name: "modern-atrium-large",
+    family: "modern",
+    footprint: 4,
+    levels: [1, 2, 3],
+    lot: "paved",
+    schemes: ["white/blue", "stone/sage"],
+    parts: atriumBlock(4),
+  },
+  {
+    name: "modern-trio",
+    family: "modern",
+    footprint: 4,
+    levels: [1, 2, 3],
+    lot: "plaza",
+    schemes: ["sky", "blue"],
+    parts: trioTowers,
   },
   {
     name: "modern-mall",

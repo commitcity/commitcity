@@ -241,7 +241,7 @@ Example `manifest.json` (the exact schema is defined in `ARCHITECTURE.md`):
 }
 ```
 
-Ground, roads and vegetation are tile sets: one folder per kind with a manifest (`id`, `kind` (`ground`, `road` or `vegetation`), `authors`, `license`, `aiAssisted`). Ground kinds are `grass`, `dirt` and `pavement`, with `variant-0.png` to `variant-3.png`. A road set has `mask-0.png` to `mask-15.png`, one per neighbor mask (bit 1 = lower-right neighbor, 2 = lower-left, 4 = upper-left, 8 = upper-right). Vegetation kinds are `tree`, `bush`, `flowers`, `weeds` and `dead-tree`, with `variant-0.png` to `variant-2.png`. Ground and road tiles are exactly one 32 × 16 diamond, fully covered; vegetation follows the building canvas rules for a 1×1 footprint and may be as short as the diamond. **Rule.**
+Ground, roads and vegetation are tile sets: one folder per kind with a manifest (`id`, `kind` (`ground`, `road` or `vegetation`), `authors`, `license`, `aiAssisted`). Ground kinds are `grass`, `meadow` (lighter open patches), `forest` (the shaded floor under woods), `dirt` and `pavement`, with `variant-0.png` to `variant-3.png`. A road set has `mask-0.png` to `mask-15.png`, one per neighbor mask (bit 1 = lower-right neighbor, 2 = lower-left, 4 = upper-left, 8 = upper-right). Vegetation kinds are `tree`, `bush`, `flowers`, `weeds` and `dead-tree`, with `variant-0.png` to `variant-2.png`. Ground and road tiles are exactly one 32 × 16 diamond, fully covered; vegetation follows the building canvas rules for a 1×1 footprint and may be as short as the diamond. **Rule.**
 
 ### 12.1 Automatic checks
 

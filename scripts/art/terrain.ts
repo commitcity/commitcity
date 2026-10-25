@@ -16,8 +16,10 @@ import { type Material, box, cylinder, dome, render } from "./solids";
 const W = 32;
 const H = 16;
 
+type GroundArt = "grass" | "meadow" | "forest" | "dirt" | "pavement";
+
 /** Every texture variant of a ground kind shares its base color, so tiles meet without seams. */
-function ground(kind: "grass" | "dirt" | "pavement", variant: number): Canvas {
+function ground(kind: GroundArt, variant: number): Canvas {
   const c = new Canvas(W, H);
   const n = (...p: (string | number)[]) => noise("ground", kind, variant, ...p);
   if (kind === "grass") {
@@ -33,6 +35,30 @@ function ground(kind: "grass" | "dirt" | "pavement", variant: number): Canvas {
     }
     for (let i = 0; i < 3; i++)
       c.paint(4 + Math.floor(n("dot-x", i) * 24), 3 + Math.floor(n("dot-y", i) * 10), light);
+  } else if (kind === "meadow" || kind === "forest") {
+    // Lighter meadow or shaded forest floor: the grass's own base colour at the tile
+    // edge, fading into the patch's tone toward the middle, so neighbouring grass
+    // tiles blend in instead of meeting at a hard step.
+    const [dark, base, mid, light, seed] = RAMPS.foliage;
+    const tone = kind === "meadow" ? mid : dark;
+    eachDiamondPixel(W, (x, y, { top, bottom }) => {
+      const d = Math.min(y - top, bottom - y);
+      const p = 0.75 * Math.min(1, d / 3);
+      c.set(x, y, n("tone", x, y) < p ? tone : base);
+    });
+    for (let i = 0; i < 6; i++) {
+      const x = 6 + Math.floor(n("tuft-x", i) * 20);
+      const y = 4 + Math.floor(n("tuft-y", i) * 8);
+      if (kind === "meadow") {
+        c.paint(x, y, light);
+        c.paint(x + 1, y - 1, light);
+      } else {
+        c.paint(x, y, i % 3 ? base : RAMPS.dirt[0]);
+      }
+    }
+    if (kind === "meadow")
+      for (let i = 0; i < 3; i++)
+        c.paint(6 + Math.floor(n("dot-x", i) * 20), 4 + Math.floor(n("dot-y", i) * 8), seed);
   } else if (kind === "dirt") {
     const [dark, shadow, base, light] = RAMPS.dirt;
     eachDiamondPixel(W, (x, y) => c.set(x, y, base));
@@ -241,6 +267,45 @@ function blob(
   }
 }
 
+/**
+ * A crown made of overlapping ellipses, shaded as one shape lit from the upper
+ * left, with the outline only on its outer edge so the lobes do not read as
+ * stacked pieces.
+ */
+function crown(
+  c: Canvas,
+  lobes: readonly (readonly [number, number, number, number])[],
+  ramp: readonly Hex[],
+  seed: string,
+) {
+  const [outline, shadow, base, light, highlight] = ramp;
+  const inside = (x: number, y: number) =>
+    lobes.some(([cx, cy, rx, ry]) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1);
+  const x0 = Math.min(...lobes.map(([cx, , rx]) => cx - rx));
+  const x1 = Math.max(...lobes.map(([cx, , rx]) => cx + rx));
+  const y0 = Math.min(...lobes.map(([, cy, , ry]) => cy - ry));
+  const y1 = Math.max(...lobes.map(([, cy, , ry]) => cy + ry));
+  const mx = (x0 + x1) / 2;
+  const my = (y0 + y1) / 2;
+  for (let y = Math.floor(y0); y <= y1; y++) {
+    for (let x = Math.floor(x0); x <= x1; x++) {
+      if (!inside(x, y)) continue;
+      const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
+      // Each lobe is lit on its own upper left, and the whole crown darkens to the lower right.
+      const lobe = lobes.find(
+        ([cx, cy, rx, ry]) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1,
+      )!;
+      const own = -(x + 0.5 - lobe[0]) / lobe[2] - (y + 0.5 - lobe[1]) / lobe[3];
+      const whole = (-(x + 0.5 - mx) / (x1 - x0) - (y + 0.5 - my) / (y1 - y0)) * 2;
+      const lit = own * 0.45 + whole * 0.75 + (noise(seed, x, y) - 0.5) * 0.5;
+      let color =
+        lit > 0.75 && highlight ? highlight : lit > 0.25 ? light! : lit > -0.4 ? base! : shadow!;
+      if (edge) color = lit > 0.6 ? shadow! : outline!;
+      c.set(x, y, color);
+    }
+  }
+}
+
 /** A small flat shadow on the ground under a plant, inside its tile. */
 function groundShadow(c: Canvas, cx: number, groundY: number, rx: number) {
   for (let x = -rx; x < rx; x++) {
@@ -255,6 +320,13 @@ function trunk(c: Canvas, cx: number, groundY: number, height: number, light: He
     c.set(cx, y, dark);
   }
 }
+
+/** Blossom ramps, outline first: pink ipê, jacaranda, yellow ipê. */
+const BLOSSOMS: readonly (readonly Hex[])[] = [
+  ["753c54", "a24b6f", "cf657f", "ed8099", "eaaded"],
+  ["45293f", "6b3e75", "905ea9", "a884f3", "eaaded"],
+  ["9e4539", "f79617", "f9c22b", "fbff86"],
+];
 
 function vegetation(kind: string, variant: number): Canvas {
   const c = new Canvas(W, 80);
@@ -299,6 +371,42 @@ function vegetation(kind: string, variant: number): Canvas {
         blob(c, cx, groundY - 17, 5, 11, RAMPS.foliage.slice(0, 4), seed);
       }
       break;
+    case "blossom": {
+      // A flowering tree (ipê, jacaranda, cherry): a wide, airy crown of
+      // blossoms over a forked trunk, with a few leaves showing in the shade.
+      const ramp = BLOSSOMS[variant]!;
+      groundShadow(c, cx, groundY, 8);
+      trunk(c, cx, groundY, 8, COLORS.barkLight, COLORS.bark);
+      for (let t = 1; t <= 3; t++) {
+        c.set(cx - 1 - t, groundY - 7 - t, COLORS.barkLight);
+        c.set(cx + t, groundY - 7 - t, COLORS.bark);
+      }
+      crown(
+        c,
+        [
+          [cx - 5, groundY - 13, 5, 4],
+          [cx + 5, groundY - 13, 5, 4],
+          [cx - 2, groundY - 18, 6, 4],
+          [cx + 3, groundY - 19, 4, 3],
+          [cx, groundY - 14, 6, 4],
+        ],
+        ramp,
+        seed,
+      );
+      for (let i = 0; i < 6; i++) {
+        const x = cx - 7 + Math.floor(noise(seed, "leaf-x", i) * 14);
+        const y = groundY - 16 + Math.floor(noise(seed, "leaf-y", i) * 7);
+        if (c.get(x, y) && x >= cx - 2) c.set(x, y, RAMPS.foliage[1]);
+      }
+      // Fallen petals around the trunk.
+      for (let i = 0; i < 5; i++)
+        c.set(
+          cx - 6 + Math.floor(noise(seed, "petal-x", i) * 12),
+          groundY - 1 + Math.floor(noise(seed, "petal-y", i) * 3),
+          ramp[3]!,
+        );
+      break;
+    }
     case "bush": {
       const r = 3 + variant;
       groundShadow(c, cx, groundY, r + 1);
@@ -352,7 +460,7 @@ function vegetation(kind: string, variant: number): Canvas {
 }
 
 const root = "assets";
-for (const kind of ["grass", "dirt", "pavement"] as const) {
+for (const kind of ["grass", "meadow", "forest", "dirt", "pavement"] as const) {
   const files: Record<string, Canvas> = {};
   for (let v = 0; v < GROUND_VARIANT_COUNT; v++) files[`variant-${v}.png`] = ground(kind, v);
   writeFolder({
@@ -379,7 +487,17 @@ for (const kind of ["grass", "dirt", "pavement"] as const) {
     files,
   });
 }
-for (const kind of ["tree", "bush", "flowers", "weeds", "dead-tree", "fountain", "bench", "lamp"]) {
+for (const kind of [
+  "tree",
+  "blossom",
+  "bush",
+  "flowers",
+  "weeds",
+  "dead-tree",
+  "fountain",
+  "bench",
+  "lamp",
+]) {
   const files: Record<string, Canvas> = {};
   const props = ["fountain", "bench", "lamp"];
   for (let v = 0; v < DECORATION_VARIANT_COUNT; v++)

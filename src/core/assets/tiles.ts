@@ -26,11 +26,21 @@ export const WATER_SHAPE_COUNT = 16;
 
 /** Folder ids each kind accepts: the names the generator uses. */
 const TILE_IDS: Record<TileKind, readonly string[] | null> = {
-  ground: ["grass", "dirt", "pavement"],
+  ground: ["grass", "meadow", "forest", "dirt", "pavement"],
   road: null,
   water: ["water"],
   // Props live with the vegetation: they stand on one tile the same way.
-  vegetation: ["tree", "bush", "flowers", "weeds", "dead-tree", "fountain", "bench", "lamp"],
+  vegetation: [
+    "tree",
+    "blossom",
+    "bush",
+    "flowers",
+    "weeds",
+    "dead-tree",
+    "fountain",
+    "bench",
+    "lamp",
+  ],
 };
 
 export interface TileManifest {
